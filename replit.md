@@ -16,7 +16,7 @@ The agent operates in a loop: **Planner → Executor → Reviewer → Writer**
 - Python 3.11
 - FastAPI (async web framework)
 - LangGraph (StateGraph architecture)
-- LangChain + Google Gemini (gemini-1.5-flash)
+- LangChain + Google Gemini (gemini-2.5-flash)
 - DuckDuckGo Search (free, no API key needed)
 - Pydantic v2 (data validation)
 

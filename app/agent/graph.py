@@ -20,7 +20,12 @@ Always provide structured, actionable responses."""
 
 def get_llm() -> ChatGoogleGenerativeAI:
     """Initialize the Google Gemini LLM."""
-    return ChatGoogleGenerativeAI(model="gemini-1.5-flash", temperature=0.1)
+    import os
+    return ChatGoogleGenerativeAI(
+        model="gemini-2.5-flash",
+        google_api_key=os.getenv("GOOGLE_API_KEY"),
+        temperature=0.1
+    )
 
 
 def planner_node(state: AgentState) -> dict:
