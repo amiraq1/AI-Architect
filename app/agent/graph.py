@@ -4,9 +4,13 @@ from typing import Literal
 from langchain_groq import ChatGroq
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from langgraph.graph import StateGraph, END
+from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 
 from app.agent.state import AgentState
 from app.tools.defined_tools import get_tools, web_search, file_writer, python_repl
+
+os.makedirs("data", exist_ok=True)
+MEMORY_DB_PATH = "data/memory.db"
 
 
 NABD_SYSTEM_PROMPT = """
@@ -232,8 +236,8 @@ def check_plan(state: AgentState) -> Literal["executor", "writer"]:
     return "writer"
 
 
-def create_agent_graph() -> StateGraph:
-    """Create and compile the agent state graph."""
+async def create_agent_graph(checkpointer=None):
+    """Create and compile the agent state graph with optional memory."""
     workflow = StateGraph(AgentState)
     
     workflow.add_node("planner", planner_node)
@@ -245,4 +249,11 @@ def create_agent_graph() -> StateGraph:
     workflow.add_conditional_edges("executor", check_plan)
     workflow.add_edge("writer", END)
     
+    if checkpointer:
+        return workflow.compile(checkpointer=checkpointer)
     return workflow.compile()
+
+
+async def get_memory_saver():
+    """Get the async SQLite memory saver."""
+    return AsyncSqliteSaver.from_conn_string(MEMORY_DB_PATH)

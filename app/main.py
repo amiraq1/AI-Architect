@@ -5,7 +5,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from langchain_core.messages import HumanMessage
 
-from app.agent.graph import create_agent_graph
+from app.agent.graph import create_agent_graph, get_memory_saver
 from app.agent.state import AgentState
 
 
@@ -26,6 +26,7 @@ app.add_middleware(
 
 class RunRequest(BaseModel):
     prompt: str
+    thread_id: str = "default_user"
 
 
 class RunResponse(BaseModel):
@@ -57,27 +58,30 @@ async def run_agent(request: RunRequest):
         )
     
     try:
-        agent = create_agent_graph()
-        
-        initial_state: AgentState = {
-            "messages": [HumanMessage(content=request.prompt)],
-            "plan": [],
-            "current_step": "",
-            "current_step_index": 0,
-            "tools_output": {},
-            "final_report": "",
-            "review_feedback": "",
-            "is_complete": False
-        }
-        
-        final_state = await agent.ainvoke(initial_state)
-        
-        return RunResponse(
-            success=True,
-            result=final_state.get("final_report", "No report generated"),
-            plan=final_state.get("plan", []),
-            steps_executed=final_state.get("current_step_index", 0) + 1
-        )
+        memory = await get_memory_saver()
+        async with memory:
+            agent = await create_agent_graph(checkpointer=memory)
+            
+            initial_state: AgentState = {
+                "messages": [HumanMessage(content=request.prompt)],
+                "plan": [],
+                "current_step": "",
+                "current_step_index": 0,
+                "tools_output": {},
+                "final_report": "",
+                "review_feedback": "",
+                "is_complete": False
+            }
+            
+            config = {"configurable": {"thread_id": request.thread_id}}
+            final_state = await agent.ainvoke(initial_state, config=config)
+            
+            return RunResponse(
+                success=True,
+                result=final_state.get("final_report", "No report generated"),
+                plan=final_state.get("plan", []),
+                steps_executed=final_state.get("current_step_index", 0) + 1
+            )
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Agent execution error: {str(e)}")

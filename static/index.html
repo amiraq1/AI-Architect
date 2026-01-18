@@ -350,6 +350,11 @@
                 userInput: '',
                 messages: [],
                 isLoading: false,
+                sessionId: localStorage.getItem('nabd_session_id') || (() => {
+                    const id = 'user_' + Math.random().toString(36).substr(2, 9);
+                    localStorage.setItem('nabd_session_id', id);
+                    return id;
+                })(),
 
                 async sendMessage(presetMessage = null) {
                     const message = presetMessage || this.userInput.trim();
@@ -369,7 +374,7 @@
                             headers: {
                                 'Content-Type': 'application/json'
                             },
-                            body: JSON.stringify({ prompt: message })
+                            body: JSON.stringify({ prompt: message, thread_id: this.sessionId })
                         });
 
                         const data = await response.json();
