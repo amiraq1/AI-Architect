@@ -182,36 +182,20 @@ Only respond with the JSON, no other text."""
 def writer_node(state: AgentState) -> dict:
     """Compile all gathered data into a final report."""
     llm = get_llm()
-    
     messages = state.get("messages", [])
-    plan = state.get("plan", [])
-    tools_output = state.get("tools_output", {})
-    user_query = messages[-1].content if messages else ""
     
-    writing_prompt = f"""Compile a comprehensive final report based on the gathered information.
-
-Original Request: {user_query}
-Execution Plan: {plan}
-Gathered Data: {json.dumps(tools_output, indent=2)}
-
-Write a well-structured Markdown report that:
-1. Directly addresses the user's original request
-2. Synthesizes all gathered information
-3. Provides clear conclusions and actionable insights
-4. Is professional and easy to read
-
-Write the complete report now."""
-
-    response = llm.invoke([
-        SystemMessage(content=NABD_SYSTEM_PROMPT),
-        HumanMessage(content=writing_prompt)
-    ])
+    writer_prompt = """
+    Review all the previous messages and tool outputs.
+    Write a comprehensive, professional response to the original user query.
+    Use Markdown formatting (headers, tables, lists).
+    Support your answer with the data found.
+    """
     
-    final_report = response.content
+    final_response = llm.invoke(messages + [HumanMessage(content=writer_prompt)])
     
     return {
-        "final_report": final_report,
-        "messages": [AIMessage(content=final_report)]
+        "final_report": final_response.content,
+        "messages": [final_response]
     }
 
 
