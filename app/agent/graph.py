@@ -1,6 +1,7 @@
 import json
+import os
 from typing import Literal
-from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_groq import ChatGroq
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from langgraph.graph import StateGraph, END
 
@@ -18,12 +19,11 @@ Your capabilities include:
 Always provide structured, actionable responses."""
 
 
-def get_llm() -> ChatGoogleGenerativeAI:
-    """Initialize the Google Gemini LLM."""
-    import os
-    return ChatGoogleGenerativeAI(
-        model="gemini-2.5-flash",
-        google_api_key=os.getenv("GOOGLE_API_KEY"),
+def get_llm() -> ChatGroq:
+    """Initialize the Groq LLM with Llama 3."""
+    return ChatGroq(
+        model="llama3-70b-8192",
+        api_key=os.getenv("GROQ_API_KEY"),
         temperature=0.1
     )
 

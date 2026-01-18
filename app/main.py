@@ -48,12 +48,12 @@ async def run_agent(request: RunRequest):
     if not request.prompt.strip():
         raise HTTPException(status_code=400, detail="Prompt cannot be empty")
     
-    google_key = os.getenv("GOOGLE_API_KEY")
+    groq_key = os.getenv("GROQ_API_KEY")
     
-    if not google_key:
+    if not groq_key:
         raise HTTPException(
             status_code=500, 
-            detail="GOOGLE_API_KEY not configured. Please set the API key."
+            detail="GROQ_API_KEY not configured. Please set the API key."
         )
     
     try:

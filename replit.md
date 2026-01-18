@@ -17,7 +17,7 @@ The agent operates in a loop: **Planner → Executor → Reviewer → Writer**
 - Python 3.11
 - FastAPI (async web framework)
 - LangGraph (StateGraph architecture)
-- LangChain + Google Gemini (gemini-2.5-flash)
+- LangChain + Groq (llama3-70b-8192)
 - DuckDuckGo Search (free, no API key needed)
 - Pydantic v2 (data validation)
 - TailwindCSS, Alpine.js, Marked.js (frontend)
@@ -36,7 +36,7 @@ The agent operates in a loop: **Planner → Executor → Reviewer → Writer**
 - `POST /run` - Execute agent with `{"prompt": "your task..."}`
 
 ## Required Environment Variables
-- `GOOGLE_API_KEY` - Google API key for Gemini (get from Google AI Studio)
+- `GROQ_API_KEY` - Groq API key for Llama 3 (get from console.groq.com)
 
 ## Project Structure
 ```
