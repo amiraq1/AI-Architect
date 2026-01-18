@@ -378,8 +378,15 @@
                             throw new Error(data.detail || 'حدث خطأ في الاتصال');
                         }
 
-                        const fileMatch = data.result.match(/(?:saved to |wrote to |created |file: ?)?(?:data\/)?([a-zA-Z0-9_\-]+\.[a-zA-Z0-9]+)/i);
-                        const detectedFile = fileMatch ? fileMatch[1] : null;
+                        const validExtensions = ['csv', 'txt', 'pdf', 'docx', 'xlsx', 'png', 'jpg', 'jpeg', 'json', 'md', 'html'];
+                        const fileMatch = data.result.match(/(?:saved to |wrote to |created |file: ?)?(?:data\/)?([a-zA-Z0-9_\-]+\.(csv|txt|pdf|docx|xlsx|png|jpg|jpeg|json|md|html))/i);
+                        let detectedFile = null;
+                        if (fileMatch && !data.result.includes('youtube.com') && !data.result.includes('youtu.be')) {
+                            const ext = fileMatch[1].split('.').pop().toLowerCase();
+                            if (validExtensions.includes(ext)) {
+                                detectedFile = fileMatch[1];
+                            }
+                        }
                         
                         this.messages.push({
                             type: 'assistant',

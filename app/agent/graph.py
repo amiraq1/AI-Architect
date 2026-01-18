@@ -28,7 +28,7 @@ CAPABILITIES:
 - web_search: Search the internet for real-time information
 - file_writer: Save text content to files
 - python_repl: Execute Python code for calculations and data processing
-- youtube_analyzer: "Watch" YouTube videos by reading their transcripts. Use this to summarize, analyze, or extract information from videos.
+- get_youtube_transcript: Watch YouTube videos by reading their transcripts. Use this to summarize, analyze, or extract information from videos.
 """
 
 

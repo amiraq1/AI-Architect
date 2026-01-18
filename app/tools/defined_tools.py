@@ -118,9 +118,9 @@ def python_repl(code: str) -> str:
         return f"Execution error: {str(e)}"
 
 
-from app.tools.video_ops import youtube_analyzer
+from app.tools.video_ops import get_youtube_transcript
 
 
 def get_tools() -> List:
     """Return a list of all available tools."""
-    return [web_search, file_writer, python_repl, youtube_analyzer]
+    return [web_search, file_writer, python_repl, get_youtube_transcript]

@@ -17,8 +17,8 @@ def extract_video_id(url: str) -> str:
 
 
 @tool
-def youtube_analyzer(video_url: str) -> str:
-    """Analyze a YouTube video by reading its transcript.
+def get_youtube_transcript(video_url: str) -> str:
+    """Get the transcript of a YouTube video to analyze its content.
     
     Args:
         video_url: The YouTube video URL or video ID.
@@ -46,13 +46,10 @@ def youtube_analyzer(video_url: str) -> str:
         author = doc.metadata.get("author", "Unknown Author")
         transcript = doc.page_content
         
-        return f"""## Video Analysis
+        return f"""Title: {title}
+Author: {author}
 
-**Title:** {title}
-**Author:** {author}
-**URL:** {full_url}
-
-### Transcript:
+Transcript:
 {transcript}
 """
         
