@@ -85,23 +85,35 @@ def executor_node(state: AgentState) -> dict:
     llm = get_llm().bind_tools(tools)
     
     executor_prompt = f"""
-    Current Task: {current_task}
-    Execute this task using the available tools. 
-    If you need to search, use web_search. 
-    If you need to calculate/code, use python_repl.
+    Current Objective: {current_task}
+    
+    You MUST use one of the available tools to achieve this objective.
+    - If you need information, call 'web_search'.
+    - If you need to write a file, call 'file_writer'.
+    - If you need calculations, call 'python_repl'.
+    
+    Do not just talk. ACT.
     """
     
-    result = llm.invoke([
-        SystemMessage(content=NABD_SYSTEM_PROMPT),
-        HumanMessage(content=executor_prompt)
-    ])
-    
-    return {
-        "plan": remaining_plan,
-        "current_step": f"executed: {current_task}",
-        "messages": [result],
-        "tools_output": {current_task: result.content}
-    }
+    try:
+        result = llm.invoke([
+            SystemMessage(content=NABD_SYSTEM_PROMPT),
+            HumanMessage(content=executor_prompt)
+        ])
+        
+        return {
+            "plan": remaining_plan,
+            "current_step": f"executed: {current_task}",
+            "messages": [result],
+            "tools_output": {current_task: result.content}
+        }
+        
+    except Exception as e:
+        return {
+            "plan": remaining_plan,
+            "current_step": f"failed: {current_task}",
+            "messages": [AIMessage(content=f"Error executing step: {str(e)}")]
+        }
 
 
 def reviewer_node(state: AgentState) -> dict:
