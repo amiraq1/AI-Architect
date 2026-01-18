@@ -17,7 +17,7 @@ The agent operates in a loop: **Planner → Executor → Reviewer → Writer**
 - Python 3.11
 - FastAPI (async web framework)
 - LangGraph (StateGraph architecture)
-- LangChain + Groq (llama3-70b-8192)
+- LangChain + Groq (llama-3.3-70b-versatile)
 - DuckDuckGo Search (free, no API key needed)
 - Pydantic v2 (data validation)
 - TailwindCSS, Alpine.js, Marked.js (frontend)

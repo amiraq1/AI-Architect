@@ -20,11 +20,11 @@ Always provide structured, actionable responses."""
 
 
 def get_llm() -> ChatGroq:
-    """Initialize the Groq LLM with Llama 3."""
+    """Initialize the Groq LLM with Llama 3.3."""
     return ChatGroq(
-        model="llama3-70b-8192",
+        model="llama-3.3-70b-versatile",
         api_key=os.getenv("GROQ_API_KEY"),
-        temperature=0.1
+        temperature=0
     )
 
 
