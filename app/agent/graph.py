@@ -199,11 +199,11 @@ def writer_node(state: AgentState) -> dict:
     }
 
 
-def should_continue(state: AgentState) -> Literal["executor", "writer"]:
-    """Determine if we should continue executing or write the final report."""
-    if state.get("is_complete", False):
-        return "writer"
-    return "executor"
+def check_plan(state: AgentState) -> Literal["executor", "writer"]:
+    """Check if there are remaining steps in the plan."""
+    if state.get("plan") and len(state["plan"]) > 0:
+        return "executor"
+    return "writer"
 
 
 def create_agent_graph() -> StateGraph:
@@ -212,20 +212,11 @@ def create_agent_graph() -> StateGraph:
     
     workflow.add_node("planner", planner_node)
     workflow.add_node("executor", executor_node)
-    workflow.add_node("reviewer", reviewer_node)
     workflow.add_node("writer", writer_node)
     
     workflow.set_entry_point("planner")
     workflow.add_edge("planner", "executor")
-    workflow.add_edge("executor", "reviewer")
-    workflow.add_conditional_edges(
-        "reviewer",
-        should_continue,
-        {
-            "executor": "executor",
-            "writer": "writer"
-        }
-    )
+    workflow.add_conditional_edges("executor", check_plan)
     workflow.add_edge("writer", END)
     
     return workflow.compile()
