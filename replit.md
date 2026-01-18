@@ -16,8 +16,8 @@ The agent operates in a loop: **Planner → Executor → Reviewer → Writer**
 - Python 3.11
 - FastAPI (async web framework)
 - LangGraph (StateGraph architecture)
-- LangChain + OpenAI GPT-4o
-- Tavily Search API
+- LangChain + Google Gemini (gemini-1.5-flash)
+- DuckDuckGo Search (free, no API key needed)
 - Pydantic v2 (data validation)
 
 ## API Endpoints
@@ -26,8 +26,7 @@ The agent operates in a loop: **Planner → Executor → Reviewer → Writer**
 - `POST /run` - Execute agent with `{"prompt": "your task..."}`
 
 ## Required Environment Variables
-- `OPENAI_API_KEY` - OpenAI API key for GPT-4o
-- `TAVILY_API_KEY` - Tavily API key for web search
+- `GOOGLE_API_KEY` - Google API key for Gemini (get from Google AI Studio)
 
 ## Project Structure
 ```

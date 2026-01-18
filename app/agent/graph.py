@@ -1,6 +1,6 @@
 import json
 from typing import Literal
-from langchain_openai import ChatOpenAI
+from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from langgraph.graph import StateGraph, END
 
@@ -18,9 +18,9 @@ Your capabilities include:
 Always provide structured, actionable responses."""
 
 
-def get_llm() -> ChatOpenAI:
-    """Initialize the OpenAI LLM."""
-    return ChatOpenAI(model="gpt-4o", temperature=0.1)
+def get_llm() -> ChatGoogleGenerativeAI:
+    """Initialize the Google Gemini LLM."""
+    return ChatGoogleGenerativeAI(model="gemini-1.5-flash", temperature=0.1)
 
 
 def planner_node(state: AgentState) -> dict:
@@ -119,16 +119,16 @@ Only respond with the JSON, no other text."""
         
         tool_result = ""
         if tool_name == "web_search":
-            tool_result = web_search.invoke(params.get("query", current_step))
+            tool_result = web_search.invoke({"query": params.get("query", current_step)})
         elif tool_name == "python_repl":
-            tool_result = python_repl.invoke(params.get("code", "print('No code provided')"))
+            tool_result = python_repl.invoke({"code": params.get("code", "print('No code provided')")})
         elif tool_name == "file_writer":
             tool_result = file_writer.invoke({
                 "content": params.get("content", ""),
                 "filename": params.get("filename", "output.txt")
             })
         else:
-            tool_result = web_search.invoke(current_step)
+            tool_result = web_search.invoke({"query": current_step})
         
         tools_output[current_step] = {
             "tool": tool_name,
@@ -136,7 +136,7 @@ Only respond with the JSON, no other text."""
         }
         
     except (json.JSONDecodeError, KeyError) as e:
-        tool_result = web_search.invoke(current_step)
+        tool_result = web_search.invoke({"query": current_step})
         tools_output[current_step] = {
             "tool": "web_search",
             "result": tool_result,
@@ -192,7 +192,9 @@ Only respond with the JSON, no other text."""
         decision = "next_step"
         feedback = "Proceeding to next step"
     
-    if decision == "complete" or current_step_index >= len(plan) - 1:
+    is_last_step = current_step_index >= len(plan) - 1
+    
+    if decision == "complete":
         return {
             "is_complete": True,
             "review_feedback": feedback,
@@ -203,6 +205,12 @@ Only respond with the JSON, no other text."""
             "review_feedback": feedback,
             "is_complete": False
         }
+    elif is_last_step:
+        return {
+            "is_complete": True,
+            "review_feedback": feedback,
+            "current_step": "Complete"
+        }
     else:
         next_index = current_step_index + 1
         next_step = plan[next_index] if next_index < len(plan) else "Complete"
@@ -210,7 +218,7 @@ Only respond with the JSON, no other text."""
             "current_step_index": next_index,
             "current_step": next_step,
             "review_feedback": feedback,
-            "is_complete": next_step == "Complete"
+            "is_complete": False
         }
 
 

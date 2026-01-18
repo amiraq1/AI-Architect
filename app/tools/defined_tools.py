@@ -3,7 +3,7 @@ import sys
 from io import StringIO
 from typing import List
 from langchain_core.tools import tool
-from langchain_community.tools.tavily_search import TavilySearchResults
+from langchain_community.tools import DuckDuckGoSearchRun
 
 
 DATA_DIR = "./data"
@@ -12,7 +12,7 @@ os.makedirs(DATA_DIR, exist_ok=True)
 
 @tool
 def web_search(query: str) -> str:
-    """Search the web for real-time information using Tavily.
+    """Search the web for real-time information using DuckDuckGo.
     
     Args:
         query: The search query string.
@@ -21,20 +21,13 @@ def web_search(query: str) -> str:
         Search results as a formatted string.
     """
     try:
-        search_tool = TavilySearchResults(max_results=5)
-        results = search_tool.invoke({"query": query})
+        search_tool = DuckDuckGoSearchRun()
+        results = search_tool.invoke(query)
         
         if not results:
             return "No search results found."
         
-        formatted_results = []
-        for i, result in enumerate(results, 1):
-            title = result.get("title", "No title")
-            content = result.get("content", "No content")
-            url = result.get("url", "No URL")
-            formatted_results.append(f"[{i}] {title}\n   URL: {url}\n   {content}\n")
-        
-        return "\n".join(formatted_results)
+        return results
     except Exception as e:
         return f"Search error: {str(e)}"
 

@@ -57,19 +57,12 @@ async def run_agent(request: RunRequest):
     if not request.prompt.strip():
         raise HTTPException(status_code=400, detail="Prompt cannot be empty")
     
-    openai_key = os.getenv("OPENAI_API_KEY")
-    tavily_key = os.getenv("TAVILY_API_KEY")
+    google_key = os.getenv("GOOGLE_API_KEY")
     
-    if not openai_key:
+    if not google_key:
         raise HTTPException(
             status_code=500, 
-            detail="OPENAI_API_KEY not configured. Please set the API key."
-        )
-    
-    if not tavily_key:
-        raise HTTPException(
-            status_code=500,
-            detail="TAVILY_API_KEY not configured. Please set the API key."
+            detail="GOOGLE_API_KEY not configured. Please set the API key."
         )
     
     try:
