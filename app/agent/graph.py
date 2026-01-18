@@ -1,16 +1,18 @@
 import json
 import os
+import sqlite3
 from typing import Literal
 from langchain_groq import ChatGroq
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from langgraph.graph import StateGraph, END
-from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
+from langgraph.checkpoint.sqlite import SqliteSaver
 
 from app.agent.state import AgentState
 from app.tools.defined_tools import get_tools, web_search, file_writer, python_repl
 
 os.makedirs("data", exist_ok=True)
-MEMORY_DB_PATH = "data/memory.db"
+conn = sqlite3.connect("data/memory.db", check_same_thread=False)
+memory = SqliteSaver(conn)
 
 
 NABD_SYSTEM_PROMPT = """
@@ -236,8 +238,8 @@ def check_plan(state: AgentState) -> Literal["executor", "writer"]:
     return "writer"
 
 
-async def create_agent_graph(checkpointer=None):
-    """Create and compile the agent state graph with optional memory."""
+def create_agent_graph():
+    """Create and compile the agent state graph with memory."""
     workflow = StateGraph(AgentState)
     
     workflow.add_node("planner", planner_node)
@@ -249,11 +251,7 @@ async def create_agent_graph(checkpointer=None):
     workflow.add_conditional_edges("executor", check_plan)
     workflow.add_edge("writer", END)
     
-    if checkpointer:
-        return workflow.compile(checkpointer=checkpointer)
-    return workflow.compile()
+    return workflow.compile(checkpointer=memory)
 
 
-async def get_memory_saver():
-    """Get the async SQLite memory saver."""
-    return AsyncSqliteSaver.from_conn_string(MEMORY_DB_PATH)
+agent_graph = create_agent_graph()
