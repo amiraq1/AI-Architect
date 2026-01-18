@@ -1,6 +1,7 @@
 import os
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from langchain_core.messages import HumanMessage
 
@@ -34,17 +35,7 @@ class RunResponse(BaseModel):
     steps_executed: int
 
 
-@app.get("/")
-async def root():
-    """Health check endpoint."""
-    return {
-        "name": "Nabd (نبض)",
-        "status": "operational",
-        "description": "Autonomous AI Agent - Ready to execute tasks"
-    }
-
-
-@app.get("/health")
+@app.get("/api/health")
 async def health():
     """Health check endpoint."""
     return {"status": "healthy"}
@@ -90,6 +81,10 @@ async def run_agent(request: RunRequest):
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Agent execution error: {str(e)}")
+
+
+os.makedirs("static", exist_ok=True)
+app.mount("/", StaticFiles(directory="static", html=True), name="static")
 
 
 if __name__ == "__main__":
