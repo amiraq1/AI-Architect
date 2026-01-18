@@ -1,5 +1,6 @@
 import os
 import sys
+import re
 from io import StringIO
 from typing import List
 from langchain_core.tools import tool
@@ -50,34 +51,59 @@ def file_writer(content: str, filename: str) -> str:
         with open(filepath, "w", encoding="utf-8") as f:
             f.write(content)
         
-        return f"Successfully wrote content to {filepath}"
+        return f"File saved to data/{safe_filename}"
     except Exception as e:
         return f"File write error: {str(e)}"
 
 
 @tool
 def python_repl(code: str) -> str:
-    """Execute Python code safely for math and data processing.
+    """Execute Python code for calculations, data processing, and file generation.
+    
+    IMPORTANT: All files must be saved to './data/' directory.
+    Example: plt.savefig('./data/chart.png')
     
     Args:
         code: The Python code to execute.
         
     Returns:
-        The output or result of the code execution.
+        The output of the code execution, including any files created.
     """
     try:
         old_stdout = sys.stdout
+        old_stderr = sys.stderr
         sys.stdout = StringIO()
+        sys.stderr = StringIO()
         
+        global_vars = {
+            "__builtins__": __builtins__,
+            "DATA_DIR": DATA_DIR,
+        }
         local_vars = {}
         
-        exec(code, {"__builtins__": __builtins__}, local_vars)
+        exec(code, global_vars, local_vars)
         
-        output = sys.stdout.getvalue()
+        stdout_output = sys.stdout.getvalue()
+        stderr_output = sys.stderr.getvalue()
         sys.stdout = old_stdout
+        sys.stderr = old_stderr
         
-        if output:
-            return output.strip()
+        results = []
+        
+        if stdout_output.strip():
+            results.append(stdout_output.strip())
+        
+        file_patterns = re.findall(r'[\'"]\.?/?data/([^"\']+)[\'"]', code)
+        for filename in file_patterns:
+            filepath = os.path.join(DATA_DIR, filename)
+            if os.path.exists(filepath):
+                results.append(f"File saved to data/{filename}")
+        
+        if stderr_output.strip():
+            results.append(f"Warnings: {stderr_output.strip()}")
+        
+        if results:
+            return "\n".join(results)
         
         if local_vars:
             last_var = list(local_vars.values())[-1]
@@ -85,8 +111,10 @@ def python_repl(code: str) -> str:
                 return str(last_var)
         
         return "Code executed successfully (no output)"
+        
     except Exception as e:
         sys.stdout = old_stdout
+        sys.stderr = old_stderr
         return f"Execution error: {str(e)}"
 
 
