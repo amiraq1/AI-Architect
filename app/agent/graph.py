@@ -1,18 +1,16 @@
 import json
 import os
-import sqlite3
 from typing import Literal
 from langchain_groq import ChatGroq
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from langgraph.graph import StateGraph, END
-from langgraph.checkpoint.sqlite import SqliteSaver
+from langgraph.checkpoint.memory import MemorySaver
 
 from app.agent.state import AgentState
 from app.tools.defined_tools import get_tools, web_search, file_writer, python_repl
 
 os.makedirs("data", exist_ok=True)
-conn = sqlite3.connect("data/memory.db", check_same_thread=False)
-memory = SqliteSaver(conn)
+memory = MemorySaver()
 
 
 NABD_SYSTEM_PROMPT = """
