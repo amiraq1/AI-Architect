@@ -73,77 +73,34 @@ def planner_node(state: AgentState) -> dict:
 
 def executor_node(state: AgentState) -> dict:
     """Execute the current step using appropriate tools."""
-    llm = get_llm()
-    
-    current_step = state.get("current_step", "")
     plan = state.get("plan", [])
-    tools_output = state.get("tools_output", {}).copy()
-    messages = state.get("messages", [])
-    user_query = messages[-1].content if messages else ""
+    if not plan:
+        return {"current_step": "done"}
+
+    current_task = plan[0]
+    remaining_plan = plan[1:]
     
-    if not current_step or current_step == "Complete":
-        return {"tools_output": tools_output}
+    tools = get_tools()
+    llm = get_llm().bind_tools(tools)
     
-    execution_prompt = f"""You are executing this step: {current_step}
-
-Original user request: {user_query}
-Full plan: {plan}
-Previous outputs: {json.dumps(tools_output, indent=2)}
-
-Decide which tool to use and provide the exact parameters.
-Available tools:
-- web_search(query): Search the internet
-- python_repl(code): Execute Python code
-- file_writer(content, filename): Save content to a file
-
-Respond in this exact JSON format:
-{{"tool": "tool_name", "params": {{"param1": "value1"}}}}
-
-Only respond with the JSON, no other text."""
-
-    response = llm.invoke([
+    executor_prompt = f"""
+    Current Task: {current_task}
+    Execute this task using the available tools. 
+    If you need to search, use web_search. 
+    If you need to calculate/code, use python_repl.
+    """
+    
+    result = llm.invoke([
         SystemMessage(content=NABD_SYSTEM_PROMPT),
-        HumanMessage(content=execution_prompt)
+        HumanMessage(content=executor_prompt)
     ])
     
-    try:
-        content = response.content.strip()
-        if content.startswith("```"):
-            content = content.split("```")[1]
-            if content.startswith("json"):
-                content = content[4:]
-        
-        tool_decision = json.loads(content)
-        tool_name = tool_decision.get("tool", "")
-        params = tool_decision.get("params", {})
-        
-        tool_result = ""
-        if tool_name == "web_search":
-            tool_result = web_search.invoke({"query": params.get("query", current_step)})
-        elif tool_name == "python_repl":
-            tool_result = python_repl.invoke({"code": params.get("code", "print('No code provided')")})
-        elif tool_name == "file_writer":
-            tool_result = file_writer.invoke({
-                "content": params.get("content", ""),
-                "filename": params.get("filename", "output.txt")
-            })
-        else:
-            tool_result = web_search.invoke({"query": current_step})
-        
-        tools_output[current_step] = {
-            "tool": tool_name,
-            "result": tool_result
-        }
-        
-    except (json.JSONDecodeError, KeyError) as e:
-        tool_result = web_search.invoke({"query": current_step})
-        tools_output[current_step] = {
-            "tool": "web_search",
-            "result": tool_result,
-            "note": f"Fallback due to: {str(e)}"
-        }
-    
-    return {"tools_output": tools_output}
+    return {
+        "plan": remaining_plan,
+        "current_step": f"executed: {current_task}",
+        "messages": [result],
+        "tools_output": {current_task: result.content}
+    }
 
 
 def reviewer_node(state: AgentState) -> dict:
