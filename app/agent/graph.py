@@ -31,48 +31,43 @@ def get_llm() -> ChatGroq:
 def planner_node(state: AgentState) -> dict:
     """Analyze the user query and create an execution plan."""
     llm = get_llm()
-    
     messages = state.get("messages", [])
-    if not messages:
-        return {"plan": [], "current_step": "No query provided", "is_complete": True}
-    
     user_query = messages[-1].content if messages else ""
+
+    planner_prompt = f"""
+    You are the Planner for Nabd.
+    User Query: "{user_query}"
     
-    planning_prompt = f"""Analyze this user request and create a step-by-step execution plan.
-
-User Request: {user_query}
-
-Create a plan with 2-5 actionable steps. Each step should be clear and specific.
-Available actions: search (web search), compute (Python code), write (save to file), analyze (review data).
-
-Respond in this exact JSON format:
-{{"plan": ["step 1 description", "step 2 description", ...]}}
-
-Only respond with the JSON, no other text."""
-
+    Break this request down into clear, sequential steps.
+    Return ONLY a JSON object with a key "plan" containing a list of strings.
+    Example: {{"plan": ["search for X", "analyze Y", "write report"]}}
+    """
+    
     response = llm.invoke([
         SystemMessage(content=NABD_SYSTEM_PROMPT),
-        HumanMessage(content=planning_prompt)
+        HumanMessage(content=planner_prompt)
     ])
     
     try:
         content = response.content.strip()
-        if content.startswith("```"):
-            content = content.split("```")[1]
-            if content.startswith("json"):
-                content = content[4:]
-        
+        if "```json" in content:
+            content = content.split("```json")[1].split("```")[0]
+        elif "```" in content:
+            content = content.split("```")[1].split("```")[0]
+            
         plan_data = json.loads(content)
         plan = plan_data.get("plan", [])
-    except (json.JSONDecodeError, KeyError):
-        plan = ["Search for relevant information", "Analyze findings", "Compile report"]
-    
+    except Exception as e:
+        print(f"Planning Error: {e}")
+        plan = ["web_search based on query", "write final summary"]
+
     return {
-        "plan": plan,
+        "plan": plan, 
         "current_step": plan[0] if plan else "Complete",
         "current_step_index": 0,
         "tools_output": {},
-        "is_complete": False
+        "is_complete": False,
+        "messages": [AIMessage(content=f"Plan generated: {plan}")]
     }
 
 
