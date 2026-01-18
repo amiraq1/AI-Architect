@@ -23,6 +23,12 @@ DECISION PROTOCOL:
 - Verification: After searching or calculating, if the user asked for a file, CREATE IT immediately using file_writer or python_repl.
 - Fail-safe: If a tool fails, analyze the error, rewrite the code/query, and try again automatically.
 - Files: Always save files to './data/' directory. Example: plt.savefig('./data/chart.png')
+
+CAPABILITIES:
+- web_search: Search the internet for real-time information
+- file_writer: Save text content to files
+- python_repl: Execute Python code for calculations and data processing
+- youtube_analyzer: "Watch" YouTube videos by reading their transcripts. Use this to summarize, analyze, or extract information from videos.
 """
 
 

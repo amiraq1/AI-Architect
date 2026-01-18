@@ -6,4 +6,5 @@ langchain-groq>=0.1.0
 langchain-community>=0.2.0
 langgraph>=0.2.0
 duckduckgo-search>=6.0.0
-langchain-groq
+youtube-transcript-api>=0.6.0
+youtube-transcript-api
