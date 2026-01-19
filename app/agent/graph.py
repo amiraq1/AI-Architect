@@ -324,6 +324,7 @@ def writer_node(state: AgentState) -> dict:
     """Compile all gathered data into a final report."""
     llm = get_llm()
     messages = state.get("messages", [])
+    system_prompt = get_system_prompt(state.get("agent_mode", "general"))
     
     writer_prompt = """
     Review all the previous messages and tool outputs.
@@ -332,7 +333,7 @@ def writer_node(state: AgentState) -> dict:
     Support your answer with the data found.
     """
     
-    final_response = llm.invoke(messages + [HumanMessage(content=writer_prompt)])
+    final_response = llm.invoke([SystemMessage(content=system_prompt)] + messages + [HumanMessage(content=writer_prompt)])
     
     return {
         "final_report": final_response.content,
@@ -348,7 +349,11 @@ def check_plan(state: AgentState) -> Literal["executor", "writer"]:
 
 
 def create_agent_graph(agent_mode: str = "general"):
-    """Create and compile the agent state graph with memory."""
+    """Create and compile the agent state graph with memory.
+    
+    Note: agent_mode is passed through the state, not used here directly.
+    The parameter is kept for API compatibility.
+    """
     workflow = StateGraph(AgentState)
     
     workflow.add_node("planner", planner_node)
