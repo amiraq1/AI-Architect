@@ -34,6 +34,7 @@ CAPABILITIES:
 - python_repl: Execute Python code for calculations and data processing
 - get_youtube_transcript: Watch YouTube videos by reading their transcripts. Use this to summarize, analyze, or extract information from videos.
 - analyze_repo: Inspect GitHub repositories to read code, review architecture, or understand projects. Can read specific files or get repo overview.
+- generate_image: Create images from text descriptions. If the user asks for a picture, drawing, logo, illustration, or any visual design, use this tool with a detailed, descriptive prompt.
 """
 
 

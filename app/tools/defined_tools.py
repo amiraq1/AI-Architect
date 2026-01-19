@@ -120,8 +120,9 @@ def python_repl(code: str) -> str:
 
 from app.tools.video_ops import get_youtube_transcript
 from app.tools.github_ops import analyze_repo
+from app.tools.image_ops import generate_image
 
 
 def get_tools() -> List:
     """Return a list of all available tools."""
-    return [web_search, file_writer, python_repl, get_youtube_transcript, analyze_repo]
+    return [web_search, file_writer, python_repl, get_youtube_transcript, analyze_repo, generate_image]
