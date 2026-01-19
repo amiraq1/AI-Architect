@@ -255,6 +255,22 @@
                                                 | <span x-text="msg.steps_executed"></span> خطوة
                                             </span>
                                         </template>
+                                        <button @click="speakMessage(index)" 
+                                                :disabled="msg.isSpeaking"
+                                                class="mr-auto p-1.5 rounded-lg hover:bg-cyan-500/20 transition-colors group"
+                                                :class="msg.isSpeaking ? 'animate-pulse' : ''">
+                                            <template x-if="!msg.isSpeaking">
+                                                <svg class="w-4 h-4 text-slate-400 group-hover:text-cyan-400" fill="currentColor" viewBox="0 0 20 20">
+                                                    <path fill-rule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM14.657 2.929a1 1 0 011.414 0A9.972 9.972 0 0119 10a9.972 9.972 0 01-2.929 7.071 1 1 0 01-1.414-1.414A7.971 7.971 0 0017 10c0-2.21-.894-4.208-2.343-5.657a1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0A5.983 5.983 0 0115 10a5.984 5.984 0 01-1.757 4.243 1 1 0 01-1.415-1.415A3.984 3.984 0 0013 10a3.983 3.983 0 00-1.172-2.828 1 1 0 010-1.415z" clip-rule="evenodd"></path>
+                                                </svg>
+                                            </template>
+                                            <template x-if="msg.isSpeaking">
+                                                <svg class="w-4 h-4 text-cyan-400 animate-spin" fill="none" viewBox="0 0 24 24">
+                                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                </svg>
+                                            </template>
+                                        </button>
                                     </div>
                                     <div class="prose prose-invert text-slate-200 leading-relaxed" x-html="msg.content"></div>
                                     <template x-if="msg.file">
@@ -418,6 +434,35 @@
                             container.scrollTop = container.scrollHeight;
                         }
                     });
+                },
+
+                async speakMessage(index) {
+                    const msg = this.messages[index];
+                    if (!msg || msg.type !== 'assistant' || msg.isSpeaking) return;
+
+                    const textContent = msg.content.replace(/<[^>]*>/g, '').trim();
+                    if (!textContent) return;
+
+                    msg.isSpeaking = true;
+
+                    try {
+                        const response = await fetch('/speak', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ text: textContent })
+                        });
+
+                        if (!response.ok) throw new Error('TTS failed');
+
+                        const data = await response.json();
+                        const audio = new Audio(data.audio_url);
+                        audio.onended = () => { msg.isSpeaking = false; };
+                        audio.onerror = () => { msg.isSpeaking = false; };
+                        await audio.play();
+                    } catch (error) {
+                        console.error('TTS error:', error);
+                        msg.isSpeaking = false;
+                    }
                 }
             };
         }

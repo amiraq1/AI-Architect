@@ -7,6 +7,7 @@ from langchain_core.messages import HumanMessage
 
 from app.agent.graph import agent_graph
 from app.agent.state import AgentState
+from app.tools.speech_ops import generate_audio
 
 
 app = FastAPI(
@@ -27,6 +28,15 @@ app.add_middleware(
 class RunRequest(BaseModel):
     prompt: str
     thread_id: str = "default_user"
+
+
+class SpeakRequest(BaseModel):
+    text: str
+    voice: str = "ar-SA-HamidNeural"
+
+
+class SpeakResponse(BaseModel):
+    audio_url: str
 
 
 class RunResponse(BaseModel):
@@ -81,6 +91,19 @@ async def run_agent(request: RunRequest):
         
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Agent execution error: {str(e)}")
+
+
+@app.post("/speak", response_model=SpeakResponse)
+async def speak_text(request: SpeakRequest):
+    """Convert text to speech using edge-tts."""
+    if not request.text.strip():
+        raise HTTPException(status_code=400, detail="Text cannot be empty")
+    
+    try:
+        audio_url = await generate_audio(request.text, request.voice)
+        return SpeakResponse(audio_url=audio_url)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"TTS error: {str(e)}")
 
 
 os.makedirs("static", exist_ok=True)
