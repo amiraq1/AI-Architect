@@ -12,3 +12,4 @@ class AgentState(TypedDict):
     final_report: str
     review_feedback: str
     is_complete: bool
+    agent_mode: str

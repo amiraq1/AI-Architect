@@ -5,7 +5,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from langchain_core.messages import HumanMessage
 
-from app.agent.graph import agent_graph
+from app.agent.graph import create_agent_graph
 from app.agent.state import AgentState
 from app.tools.speech_ops import generate_audio
 
@@ -28,6 +28,7 @@ app.add_middleware(
 class RunRequest(BaseModel):
     prompt: str
     thread_id: str = "default_user"
+    agent_mode: str = "general"
 
 
 class SpeakRequest(BaseModel):
@@ -68,6 +69,8 @@ async def run_agent(request: RunRequest):
         )
     
     try:
+        agent_graph = create_agent_graph(request.agent_mode)
+        
         initial_state: AgentState = {
             "messages": [HumanMessage(content=request.prompt)],
             "plan": [],
@@ -76,7 +79,8 @@ async def run_agent(request: RunRequest):
             "tools_output": {},
             "final_report": "",
             "review_feedback": "",
-            "is_complete": False
+            "is_complete": False,
+            "agent_mode": request.agent_mode
         }
         
         config = {"configurable": {"thread_id": request.thread_id}}
