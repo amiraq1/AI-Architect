@@ -1,0 +1,63 @@
+The Audio button is visible, but NO sound plays when clicked.
+I need to fix the Audio Generation and Serving logic.
+
+Please perform these 4 specific fixes:
+
+1. **Fix Static Mounting (main.py):**
+   - Ensure the `static` directory exists: `os.makedirs("static", exist_ok=True)`.
+   - specific check: Verify that `app.mount("/static", StaticFiles(directory="static"), name="static")` is present and correct.
+
+2. **Fix Audio Generation (app/tools/speech_ops.py):**
+   - Ensure you are using `edge-tts` correctly in Python.
+   - Code pattern must be:
+     ```python
+     import edge_tts
+     import uuid
+     
+     async def generate_audio(text: str) -> str:
+         voice = "ar-SA-HamedNeural" # or ar-EG-SalmaNeural
+         output_file = f"static/speech_{uuid.uuid4()}.mp3"
+         communicate = edge_tts.Communicate(text, voice)
+         await communicate.save(output_file)
+         return "/" + output_file # Return relative path for frontend
+     ```
+
+3. **Fix Frontend Playback (static/index.html):**
+   - Update the `playAudio` function to include error handling and alerts.
+   - Debug logic:
+     ```javascript
+     async function playAudio(btn, text) {
+         const originalIcon = btn.innerText;
+         btn.innerText = "⏳"; // Loading
+         try {
+             console.log("Requesting audio for:", text);
+             const response = await fetch('/speak', {
+                 method: 'POST',
+                 headers: {'Content-Type': 'application/json'},
+                 body: JSON.stringify({text: text})
+             });
+             
+             if (!response.ok) throw new Error("Server Error");
+             
+             const data = await response.json();
+             console.log("Audio URL:", data.audio_url);
+             
+             const audio = new Audio(data.audio_url);
+             audio.oncanplaythrough = () => {
+                 audio.play().catch(e => alert("Autoplay blocked: " + e));
+             };
+             audio.onerror = (e) => {
+                 alert("Error loading audio file. Check console.");
+                 console.error(e);
+             };
+             
+             btn.innerText = "🔊"; // Reset
+         } catch (e) {
+             console.error(e);
+             btn.innerText = "❌";
+             alert("Audio failed: " + e.message);
+         }
+     }
+     ```
+
+4. **Restart Server** to apply changes.

@@ -109,6 +109,7 @@ async def speak_text(request: SpeakRequest):
 os.makedirs("static", exist_ok=True)
 os.makedirs("data", exist_ok=True)
 app.mount("/files", StaticFiles(directory="data"), name="files")
+app.mount("/static", StaticFiles(directory="static"), name="static_files")
 app.mount("/", StaticFiles(directory="static", html=True), name="static")
 
 

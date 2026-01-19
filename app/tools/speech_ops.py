@@ -1,17 +1,16 @@
 import os
 import uuid
 import edge_tts
-import anyio
 
-STATIC_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), "static")
+STATIC_DIR = "static"
 
 
-async def generate_audio(text: str, voice: str = "ar-SA-HamidNeural") -> str:
+async def generate_audio(text: str, voice: str = "ar-SA-HamedNeural") -> str:
     """Generate speech audio from text using edge-tts.
     
     Args:
         text: The text to convert to speech.
-        voice: The voice to use (default: ar-SA-HamidNeural for Arabic).
+        voice: The voice to use (default: ar-SA-HamedNeural for Arabic).
         
     Returns:
         The relative URL path to the generated audio file.
