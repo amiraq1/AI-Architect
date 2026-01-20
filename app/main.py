@@ -2,6 +2,10 @@ import os
 import uuid
 from typing import Optional
 from contextlib import asynccontextmanager
+from dotenv import load_dotenv
+
+load_dotenv()
+
 from fastapi import FastAPI, HTTPException, Request, UploadFile, File, Depends, status
 from fastapi.security import APIKeyHeader
 from fastapi.middleware.cors import CORSMiddleware
