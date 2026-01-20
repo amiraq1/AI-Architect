@@ -24,12 +24,17 @@ entity User {=psl
 psl=}
 
 // ─────────────────────────────────────────────────────────────────────────────
-// NABD AI ACTIONS
+// NABD AI OPERATIONS (Queries & Actions)
 // ─────────────────────────────────────────────────────────────────────────────
 
 action askNabd {
   fn: import { askNabd } from "@src/server/actions",
-  entities: [User]
+  entities: [User, Message] // Added Message entity
+}
+
+query getChatHistory {
+  fn: import { getChatHistory } from "@src/server/queries",
+  entities: [User, Message]
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
