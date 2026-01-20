@@ -1,210 +1,75 @@
 /**
- * Nabd AI Agent - OpenSaaS Server Actions
+ * Nabd AI Agent - OpenSaaS Server Action (Simplified)
  * Copy this file to: src/server/actions.ts
  */
 
-import axios, { AxiosError } from 'axios';
-import type { User } from 'wasp/entities';
+import axios from 'axios';
 import { HttpError } from 'wasp/server';
+import type { AskNabd } from 'wasp/server/operations';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // TYPES
 // ═══════════════════════════════════════════════════════════════════════════════
 
-export interface GenerateNabdResponseInput {
-  prompt: string;
-  agentMode?: 'general' | 'coder' | 'writer' | 'researcher';
-  modelName?: 'llama-3.1-8b-instant' | 'llama-3.3-70b-versatile';
-  imagePath?: string;
-}
-
-export interface NabdResponse {
-  success: boolean;
-  result: string;
-  plan: string[];
-  steps_executed: number;
-}
-
-export interface SpeakInput {
-  text: string;
-  voice?: string;
-}
-
-export interface SpeakResponse {
-  audio_url: string;
-}
-
-type Context = {
-  user: User | null;
+type NabdArgs = {
+  query: string;
+  agentMode: string; // 'general', 'coder', 'writer', 'researcher'
+  modelName: string; // 'llama-3.1-8b-instant', 'llama-3.3-70b-versatile'
 };
 
 // ═══════════════════════════════════════════════════════════════════════════════
-// CONFIGURATION
+// MAIN ACTION
 // ═══════════════════════════════════════════════════════════════════════════════
 
-const NABD_API_URL = process.env.NABD_API_URL;
-const NABD_SECRET_KEY = process.env.NABD_SECRET_KEY;
-
-const nabdHeaders = {
-  'Content-Type': 'application/json',
-  'X-NABD-SECRET': NABD_SECRET_KEY || '',
-};
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// VALIDATION HELPERS
-// ═══════════════════════════════════════════════════════════════════════════════
-
-function validateConfig(): void {
-  if (!NABD_API_URL) {
-    throw new HttpError(500, 'NABD_API_URL is not configured');
-  }
-  if (!NABD_SECRET_KEY) {
-    throw new HttpError(500, 'NABD_SECRET_KEY is not configured');
-  }
-}
-
-function validateAuth(context: Context): User {
+export const askNabd: AskNabd<NabdArgs, string> = async (args, context) => {
+  // 1. التحقق من أن المستخدم مسجل دخول
   if (!context.user) {
-    throw new HttpError(401, 'You must be logged in to use this feature');
+    throw new HttpError(401, 'يجب عليك تسجيل الدخول أولاً');
   }
-  return context.user;
-}
 
-function validateSubscription(user: User): void {
-  // Check if user has active subscription
-  // Adjust this based on your OpenSaaS subscription model
-  const status = (user as any).subscriptionStatus;
-  if (status !== 'active' && status !== 'past_due') {
-    throw new HttpError(403, 'Active subscription required. Please upgrade your plan.');
+  // 2. التحقق من الاشتراك المدفوع للموديلات الذكية
+  const isPremium = context.user.subscriptionStatus === 'active';
+  if (args.modelName === 'llama-3.3-70b-versatile' && !isPremium) {
+    throw new HttpError(403, 'الموديل الذكي متاح للمشتركين فقط 💎');
   }
-}
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// MAIN ACTIONS
-// ═══════════════════════════════════════════════════════════════════════════════
-
-/**
- * Generate AI response using Nabd Agent
- * 
- * Usage in Wasp:
- * ```wasp
- * action generateNabdResponse {
- *   fn: import { generateNabdResponse } from "@src/server/actions",
- *   entities: [User]
- * }
- * ```
- */
-export async function generateNabdResponse(
-  args: GenerateNabdResponseInput,
-  context: Context
-): Promise<NabdResponse> {
-  // Validate configuration
-  validateConfig();
-  
-  // Auth check
-  const user = validateAuth(context);
-  
-  // Subscription check
-  validateSubscription(user);
-  
+  // 3. الاتصال بسيرفر "نبض" (Replit)
   try {
-    const response = await axios.post<NabdResponse>(
-      `${NABD_API_URL}/run`,
-      {
-        prompt: args.prompt,
-        thread_id: `opensaas_${user.id}`,
-        agent_mode: args.agentMode || 'general',
-        model_name: args.modelName || 'llama-3.1-8b-instant',
-        image_path: args.imagePath,
-      },
-      { headers: nabdHeaders, timeout: 120000 }
-    );
-    
-    return response.data;
-  } catch (error) {
-    if (error instanceof AxiosError) {
-      const status = error.response?.status || 500;
-      const message = error.response?.data?.detail || 'Failed to connect to Nabd AI';
-      throw new HttpError(status, message);
+    const nabdUrl = process.env.NABD_API_URL;
+    const nabdKey = process.env.NABD_SECRET_KEY;
+
+    if (!nabdUrl || !nabdKey) {
+      throw new HttpError(500, 'NABD_API_URL or NABD_SECRET_KEY not configured');
     }
-    throw new HttpError(500, 'Unexpected error occurred');
-  }
-}
 
-/**
- * Text-to-Speech using Nabd
- */
-export async function generateNabdSpeech(
-  args: SpeakInput,
-  context: Context
-): Promise<SpeakResponse> {
-  validateConfig();
-  const user = validateAuth(context);
-  validateSubscription(user);
-  
-  try {
-    const response = await axios.post<SpeakResponse>(
-      `${NABD_API_URL}/speak`,
-      {
-        text: args.text,
-        voice: args.voice || 'ar-SA-HamidNeural',
-      },
-      { headers: nabdHeaders, timeout: 30000 }
-    );
-    
-    return {
-      audio_url: `${NABD_API_URL}${response.data.audio_url}`,
-    };
-  } catch (error) {
-    if (error instanceof AxiosError) {
-      throw new HttpError(
-        error.response?.status || 500,
-        error.response?.data?.detail || 'TTS generation failed'
-      );
-    }
-    throw new HttpError(500, 'Unexpected error occurred');
-  }
-}
-
-/**
- * Upload image for vision analysis
- */
-export async function uploadNabdImage(
-  args: { file: Buffer; filename: string; contentType: string },
-  context: Context
-): Promise<{ imagePath: string }> {
-  validateConfig();
-  const user = validateAuth(context);
-  validateSubscription(user);
-  
-  try {
-    const FormData = (await import('form-data')).default;
-    const formData = new FormData();
-    formData.append('file', args.file, {
-      filename: args.filename,
-      contentType: args.contentType,
-    });
-    
     const response = await axios.post(
-      `${NABD_API_URL}/upload`,
-      formData,
+      `${nabdUrl}/run`,
+      {
+        prompt: args.query,
+        agent_mode: args.agentMode,
+        model_name: args.modelName,
+        thread_id: `opensaas_${context.user.id}` // ربط الذاكرة بالمستخدم
+      },
       {
         headers: {
-          ...formData.getHeaders(),
-          'X-NABD-SECRET': NABD_SECRET_KEY || '',
+          'Content-Type': 'application/json',
+          'X-NABD-SECRET': nabdKey
         },
-        timeout: 30000,
+        timeout: 120000 // 2 minutes timeout للمهام الطويلة
       }
     );
-    
-    return { imagePath: response.data.image_path };
-  } catch (error) {
-    if (error instanceof AxiosError) {
-      throw new HttpError(
-        error.response?.status || 500,
-        error.response?.data?.detail || 'Image upload failed'
-      );
+
+    // 4. إرجاع رد الذكاء الاصطناعي
+    return response.data.result || response.data;
+
+  } catch (error: any) {
+    console.error('Nabd Error:', error.response?.data || error.message);
+
+    if (error instanceof HttpError) {
+      throw error;
     }
-    throw new HttpError(500, 'Unexpected error occurred');
+
+    const message = error.response?.data?.detail || 'حدث خطأ أثناء الاتصال بالوكيل الذكي';
+    throw new HttpError(error.response?.status || 500, message);
   }
-}
+};

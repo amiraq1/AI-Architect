@@ -2,6 +2,8 @@
 
 This folder contains ready-to-use code for integrating Nabd AI Agent with OpenSaaS projects.
 
+> ⚠️ **Note:** These files will show TypeScript errors in this project because they depend on `wasp`, `react`, and other packages that exist in OpenSaaS. Once copied to your OpenSaaS project, all errors will resolve.
+
 ## 📁 Files Structure
 
 ```
