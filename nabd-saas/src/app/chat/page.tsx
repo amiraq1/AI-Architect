@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, FormEvent } from 'react';
 import Link from 'next/link';
+import ChatInput from './ChatInput';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // CONSTANTS & TYPES
@@ -26,7 +27,21 @@ interface Message {
     role: 'user' | 'assistant' | 'error';
     content: string;
     plan?: string[];
+    attachment?: {
+        name: string;
+        type: string;
+    };
 }
+
+// Helper to convert file to Base64
+const convertFileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = () => resolve(reader.result as string);
+        reader.onerror = error => reject(error);
+    });
+};
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // COMPONENT
@@ -34,7 +49,6 @@ interface Message {
 
 export default function ChatPage() {
     const [messages, setMessages] = useState<Message[]>([]);
-    const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [agentMode, setAgentMode] = useState('general');
     const [modelName, setModelName] = useState('llama-3.1-8b-instant');
@@ -46,18 +60,37 @@ export default function ChatPage() {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages]);
 
-    const handleSubmit = async (e: FormEvent) => {
-        e.preventDefault();
-        if (!input.trim() || isLoading) return;
+    const handleSend = async (messageText: string, file: File | null) => {
+        if (!messageText.trim() && !file) return;
+
+        let attachmentData = null;
+        let displayContent = messageText;
+
+        if (file) {
+            try {
+                const base64Content = await convertFileToBase64(file);
+                attachmentData = {
+                    name: file.name,
+                    type: file.type,
+                    content: base64Content
+                };
+                // Adding a visual indicator to the user message
+                if (!displayContent) displayContent = `[مرفق: ${file.name}]`;
+            } catch (error) {
+                console.error("File conversion error:", error);
+                alert("فشل في قراءة الملف المرفق");
+                return;
+            }
+        }
 
         const userMessage: Message = {
             id: crypto.randomUUID(),
             role: 'user',
-            content: input.trim(),
+            content: displayContent,
+            attachment: attachmentData ? { name: attachmentData.name, type: attachmentData.type } : undefined
         };
 
         setMessages((prev) => [...prev, userMessage]);
-        setInput('');
         setIsLoading(true);
 
         try {
@@ -65,9 +98,10 @@ export default function ChatPage() {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    query: userMessage.content,
+                    query: messageText, // The prompt text
                     agentMode,
                     modelName,
+                    attachment: attachmentData // The full file data
                 }),
             });
 
@@ -106,7 +140,7 @@ export default function ChatPage() {
     return (
         <div className="flex bg-slate-950 text-slate-100 font-sans h-[100dvh] overflow-hidden" dir="rtl">
 
-            {/* 🟢 Sidebar (Desktop & Mobile Drawer) */}
+            {/* Sidebar */}
             <aside
                 className={`
           fixed top-0 right-0 z-40 h-full w-72 bg-slate-900 border-l border-slate-800 transition-transform duration-300 ease-in-out
@@ -115,7 +149,6 @@ export default function ChatPage() {
         `}
             >
                 <div className="flex flex-col h-full p-4">
-                    {/* Sidebar Header */}
                     <div className="flex items-center justify-between mb-8">
                         <Link href="/" className="flex items-center gap-2">
                             <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center text-white font-bold">
@@ -123,7 +156,6 @@ export default function ChatPage() {
                             </div>
                             <span className="font-bold text-lg">بوابة نبض</span>
                         </Link>
-                        {/* Close Button (Mobile Only) */}
                         <button onClick={() => setIsSidebarOpen(false)} className="lg:hidden text-slate-400 hover:text-white p-1">
                             <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -131,7 +163,6 @@ export default function ChatPage() {
                         </button>
                     </div>
 
-                    {/* New Chat Button */}
                     <button
                         onClick={() => window.location.reload()}
                         className="w-full py-3 px-4 mb-6 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-cyan-500/10 active:scale-95"
@@ -140,7 +171,6 @@ export default function ChatPage() {
                         <span className="text-xl leading-none">➕</span>
                     </button>
 
-                    {/* Navigation Links */}
                     <nav className="flex-1 space-y-2">
                         <div className="text-xs font-semibold text-slate-500 mb-2 px-2">الرئيسية</div>
                         <Link href="/" className="flex items-center gap-3 px-3 py-2 text-slate-300 hover:bg-slate-800 hover:text-white rounded-lg transition-colors">
@@ -159,7 +189,6 @@ export default function ChatPage() {
                         </Link>
                     </nav>
 
-                    {/* User Info (Bottom) */}
                     <div className="mt-auto pt-4 border-t border-slate-800">
                         <div className="flex items-center gap-3 px-2">
                             <div className="w-9 h-9 rounded-full bg-slate-700 flex items-center justify-center text-xs">👤</div>
@@ -172,7 +201,6 @@ export default function ChatPage() {
                 </div>
             </aside>
 
-            {/* Overlay for mobile */}
             {isSidebarOpen && (
                 <div
                     className="fixed inset-0 bg-black/50 backdrop-blur-sm z-30 lg:hidden"
@@ -180,13 +208,12 @@ export default function ChatPage() {
                 />
             )}
 
-            {/* 🔵 Main Content Area */}
+            {/* Main Content */}
             <div className="flex-1 flex flex-col h-full min-w-0 relative">
 
                 {/* Header */}
                 <header className="flex-none h-16 border-b border-slate-800 bg-slate-950/80 backdrop-blur-md flex items-center justify-between px-4 sticky top-0 z-20">
                     <div className="flex items-center gap-3">
-                        {/* Hamburger Menu (Right Side for RTL) */}
                         <button
                             onClick={() => setIsSidebarOpen(true)}
                             className="lg:hidden p-2 -mr-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg"
@@ -221,7 +248,6 @@ export default function ChatPage() {
                     </button>
                 </header>
 
-                {/* Agent Selector (Scrollable) */}
                 <div className="w-full overflow-x-auto no-scrollbar border-b border-slate-800 bg-slate-950/50 py-2 flex-none">
                     <div className="flex px-4 gap-2 min-w-max">
                         {AGENT_MODES.map((agent) => (
@@ -229,8 +255,8 @@ export default function ChatPage() {
                                 key={agent.id}
                                 onClick={() => setAgentMode(agent.id)}
                                 className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap ${agentMode === agent.id
-                                        ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
-                                        : 'text-slate-400 hover:text-white hover:bg-slate-800 border border-transparent'
+                                    ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
+                                    : 'text-slate-400 hover:text-white hover:bg-slate-800 border border-transparent'
                                     }`}
                             >
                                 <span>{agent.icon}</span>
@@ -252,7 +278,7 @@ export default function ChatPage() {
                                 {QUICK_ACTIONS.map((prompt, idx) => (
                                     <button
                                         key={idx}
-                                        onClick={() => setInput(prompt)}
+                                        onClick={() => handleSend(prompt, null)}
                                         className="p-3 text-right text-xs bg-slate-900/50 hover:bg-slate-800 border border-slate-800 hover:border-cyan-500/30 rounded-xl text-slate-300 transition-all active:scale-98"
                                     >
                                         {prompt}
@@ -270,12 +296,18 @@ export default function ChatPage() {
                         >
                             <div
                                 className={`max-w-[85%] sm:max-w-[75%] rounded-2xl px-5 py-3 shadow-sm text-sm leading-relaxed break-words ${msg.role === 'user'
-                                        ? 'bg-blue-600 text-white rounded-tr-none'
-                                        : msg.role === 'error'
-                                            ? 'bg-red-500/10 text-red-200 border border-red-500/20'
-                                            : 'bg-slate-800 text-slate-200 rounded-tl-none'
+                                    ? 'bg-blue-600 text-white rounded-tr-none'
+                                    : msg.role === 'error'
+                                        ? 'bg-red-500/10 text-red-200 border border-red-500/20'
+                                        : 'bg-slate-800 text-slate-200 rounded-tl-none'
                                     }`}
                             >
+                                {msg.attachment && (
+                                    <div className="flex items-center gap-2 mb-2 bg-black/20 p-2 rounded-lg">
+                                        <span className="text-xl">📎</span>
+                                        <span className="text-xs truncate max-w-[150px]">{msg.attachment.name}</span>
+                                    </div>
+                                )}
                                 <div className="whitespace-pre-wrap">{msg.content}</div>
                                 {msg.plan && msg.plan.length > 0 && (
                                     <div className="mt-2 pt-2 border-t border-white/10 flex flex-wrap gap-1">
@@ -303,32 +335,8 @@ export default function ChatPage() {
                     <div ref={messagesEndRef} className="h-1" />
                 </main>
 
-                {/* Input Footer */}
                 <footer className="flex-none p-3 bg-slate-950 border-t border-slate-800">
-                    <form onSubmit={handleSubmit} className="max-w-4xl mx-auto flex gap-2">
-                        <input
-                            type="text"
-                            value={input}
-                            onChange={(e) => setInput(e.target.value)}
-                            placeholder="اكتب رسالتك هنا..."
-                            className="flex-1 px-4 py-3 bg-slate-900 border border-slate-700/50 rounded-xl text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500/50 transition-all text-sm"
-                            dir="rtl"
-                            disabled={isLoading}
-                        />
-                        <button
-                            type="submit"
-                            disabled={isLoading || !input.trim()}
-                            className="w-12 h-12 flex items-center justify-center rounded-xl bg-cyan-600 text-white disabled:opacity-50 disabled:bg-slate-800 transition-all active:scale-95 shadow-lg shadow-cyan-500/20"
-                        >
-                            {isLoading ? (
-                                <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                            ) : (
-                                <svg className="w-5 h-5 rotate-180" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
-                                </svg>
-                            )}
-                        </button>
-                    </form>
+                    <ChatInput onSubmit={handleSend} isLoading={isLoading} />
                 </footer>
 
             </div>
