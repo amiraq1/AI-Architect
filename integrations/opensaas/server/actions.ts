@@ -1,25 +1,14 @@
-/**
- * Nabd AI Agent - OpenSaaS Server Action (Simplified)
- * Copy this file to: src/server/actions.ts
- */
-
 import axios from 'axios';
 import { HttpError } from 'wasp/server';
 import type { AskNabd } from 'wasp/server/operations';
+import type { Message } from 'wasp/entities';
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// TYPES
-// ═══════════════════════════════════════════════════════════════════════════════
-
+// تعريف نوع البيانات المتوقعة
 type NabdArgs = {
   query: string;
-  agentMode: string; // 'general', 'coder', 'writer', 'researcher'
-  modelName: string; // 'llama-3.1-8b-instant', 'llama-3.3-70b-versatile'
+  agentMode: string; // 'coder', 'writer', 'general', 'researcher'
+  modelName: string; // 'llama-3.1-8b-instant' (fast), 'llama-3.3-70b-versatile' (smart)
 };
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// MAIN ACTION
-// ═══════════════════════════════════════════════════════════════════════════════
 
 export const askNabd: AskNabd<NabdArgs, string> = async (args, context) => {
   // 1. التحقق من أن المستخدم مسجل دخول
@@ -27,20 +16,35 @@ export const askNabd: AskNabd<NabdArgs, string> = async (args, context) => {
     throw new HttpError(401, 'يجب عليك تسجيل الدخول أولاً');
   }
 
-  // 2. التحقق من الاشتراك المدفوع للموديلات الذكية
-  const isPremium = context.user.subscriptionStatus === 'active';
-  if (args.modelName === 'llama-3.3-70b-versatile' && !isPremium) {
-    throw new HttpError(403, 'الموديل الذكي متاح للمشتركين فقط 💎');
+  // 2. التحقق من الاشتراك وميزات الـ Premium
+  // (Model Names mapped to simple terms for check)
+  const isSmartModel = args.modelName === 'llama-3.3-70b-versatile' || args.modelName === 'smart';
+  const isCoderMode = args.agentMode === 'coder';
+
+  const isPremiumFeature = isSmartModel || isCoderMode;
+
+  // تحقق من حالة الاشتراك (يأتي جاهزاً مع OpenSaaS)
+  const hasValidSubscription = context.user.subscriptionStatus === 'active';
+
+  if (isPremiumFeature && !hasValidSubscription) {
+    throw new HttpError(403, "⚠️ هذه الميزة متاحة فقط للمشتركين. يرجى الترقية للمتابعة.");
   }
 
-  // 3. الاتصال بسيرفر "نبض" (Replit)
+  // 3. احفظ سؤال المستخدم فوراً
+  await context.entities.Message.create({
+    data: {
+      content: args.query,
+      role: 'user',
+      userId: context.user.id
+    }
+  });
+
+  // 4. الاتصال بسيرفر "نبض" (Replit)
   try {
-    const nabdUrl = process.env.NABD_API_URL;
+    const nabdUrl = process.env.NABD_API_URL || 'https://YOUR-REPL-URL.replit.app';
     const nabdKey = process.env.NABD_SECRET_KEY;
 
-    if (!nabdUrl || !nabdKey) {
-      throw new HttpError(500, 'NABD_API_URL or NABD_SECRET_KEY not configured');
-    }
+    if (!nabdUrl) { throw new HttpError(500, 'Configuration error: NABD_API_URL missing'); }
 
     const response = await axios.post(
       `${nabdUrl}/run`,
@@ -48,28 +52,33 @@ export const askNabd: AskNabd<NabdArgs, string> = async (args, context) => {
         prompt: args.query,
         agent_mode: args.agentMode,
         model_name: args.modelName,
-        thread_id: `opensaas_${context.user.id}` // ربط الذاكرة بالمستخدم
+        thread_id: context.user.id.toString()
       },
       {
         headers: {
           'Content-Type': 'application/json',
           'X-NABD-SECRET': nabdKey
         },
-        timeout: 120000 // 2 minutes timeout للمهام الطويلة
+        timeout: 60000
       }
     );
 
-    // 4. إرجاع رد الذكاء الاصطناعي
-    return response.data.result || response.data;
+    const aiAnswer = response.data.result || response.data.response || JSON.stringify(response.data);
+
+    // 5. احفظ إجابة نبض في قاعدة البيانات
+    await context.entities.Message.create({
+      data: {
+        content: aiAnswer,
+        role: 'assistant',
+        userId: context.user.id
+      }
+    });
+
+    return aiAnswer;
 
   } catch (error: any) {
     console.error('Nabd Error:', error.response?.data || error.message);
-
-    if (error instanceof HttpError) {
-      throw error;
-    }
-
-    const message = error.response?.data?.detail || 'حدث خطأ أثناء الاتصال بالوكيل الذكي';
-    throw new HttpError(error.response?.status || 500, message);
+    const detail = error.response?.data?.detail || 'حدث خطأ أثناء الاتصال بالوكيل الذكي';
+    throw new HttpError(500, detail);
   }
 };

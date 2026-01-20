@@ -5,21 +5,30 @@
 
 /*
 // ─────────────────────────────────────────────────────────────────────────────
+// DATABASE ENTITIES
+// ─────────────────────────────────────────────────────────────────────────────
+
+entity Message {=psl
+  id          Int      @id @default(autoincrement())
+  content     String
+  role        String   // "user" أو "assistant"
+  createdAt   DateTime @default(now())
+  user        User     @relation(fields: [userId], references: [id])
+  userId      Int
+psl=}
+
+// Update your existing User entity to include messages relation:
+entity User {=psl
+  // ... existing fields ...
+  messages    Message[]
+psl=}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // NABD AI ACTIONS
 // ─────────────────────────────────────────────────────────────────────────────
 
-action generateNabdResponse {
-  fn: import { generateNabdResponse } from "@src/server/actions",
-  entities: [User]
-}
-
-action generateNabdSpeech {
-  fn: import { generateNabdSpeech } from "@src/server/actions",
-  entities: [User]
-}
-
-action uploadNabdImage {
-  fn: import { uploadNabdImage } from "@src/server/actions",
+action askNabd {
+  fn: import { askNabd } from "@src/server/actions",
   entities: [User]
 }
 
