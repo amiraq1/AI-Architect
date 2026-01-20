@@ -2,7 +2,8 @@ import os
 import uuid
 from typing import Optional
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, HTTPException, Request, UploadFile, File
+from fastapi import FastAPI, HTTPException, Request, UploadFile, File, Depends, status
+from fastapi.security import APIKeyHeader
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -12,6 +13,23 @@ from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 from app.agent.graph import workflow
 from app.agent.state import AgentState
 from app.tools.speech_ops import generate_audio
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# API KEY SECURITY
+# ═══════════════════════════════════════════════════════════════════════════════
+NABD_API_KEY = "nabd-secret-2026-v1"
+api_key_header = APIKeyHeader(name="X-NABD-SECRET", auto_error=False)
+
+
+async def get_api_key(api_key: str = Depends(api_key_header)) -> str:
+    """Validate API key from request header."""
+    if api_key == NABD_API_KEY:
+        return api_key
+    raise HTTPException(
+        status_code=status.HTTP_403_FORBIDDEN,
+        detail="Could not validate credentials"
+    )
 
 
 # Create upload directory
@@ -53,6 +71,7 @@ class RunRequest(BaseModel):
     thread_id: str = "default_user"
     agent_mode: str = "general"
     image_path: Optional[str] = None
+    model_name: str = "llama-3.1-8b-instant"
 
 
 class SpeakRequest(BaseModel):
@@ -83,7 +102,7 @@ async def health():
     return {"status": "healthy"}
 
 
-@app.post("/upload", response_model=UploadResponse)
+@app.post("/upload", response_model=UploadResponse, dependencies=[Depends(get_api_key)])
 async def upload_image(file: UploadFile = File(...)):
     """Upload an image file for vision analysis."""
     
@@ -115,7 +134,7 @@ async def upload_image(file: UploadFile = File(...)):
         raise HTTPException(status_code=500, detail=f"Upload error: {str(e)}")
 
 
-@app.post("/run", response_model=RunResponse)
+@app.post("/run", response_model=RunResponse, dependencies=[Depends(get_api_key)])
 async def run_agent(run_request: RunRequest, request: Request):
     """Execute the autonomous agent with the given prompt."""
     
@@ -149,10 +168,16 @@ async def run_agent(run_request: RunRequest, request: Request):
             "review_feedback": "",
             "is_complete": False,
             "agent_mode": run_request.agent_mode,
-            "image_path": run_request.image_path
+            "image_path": run_request.image_path,
+            "model_name": run_request.model_name
         }
         
-        config = {"configurable": {"thread_id": run_request.thread_id}}
+        config = {
+            "configurable": {
+                "thread_id": run_request.thread_id,
+                "model_name": run_request.model_name
+            }
+        }
         final_state = await agent_graph.ainvoke(initial_state, config=config)
         
         return RunResponse(
@@ -166,7 +191,7 @@ async def run_agent(run_request: RunRequest, request: Request):
         raise HTTPException(status_code=500, detail=f"Agent execution error: {str(e)}")
 
 
-@app.post("/speak", response_model=SpeakResponse)
+@app.post("/speak", response_model=SpeakResponse, dependencies=[Depends(get_api_key)])
 async def speak_text(request: SpeakRequest):
     """Convert text to speech using edge-tts."""
     if not request.text.strip():

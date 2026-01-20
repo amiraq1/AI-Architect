@@ -338,9 +338,51 @@
                 </button>
             </div>
 
+            <!-- Model Settings Section -->
+            <div class="mt-6 pt-6 border-t border-slate-700">
+                <h4 class="text-sm font-medium text-slate-400 mb-3 text-center">⚙️ إعدادات الموديل</h4>
+
+                <div class="space-y-2">
+                    <button @click="currentModel = 'llama-3.1-8b-instant'"
+                        :class="currentModel === 'llama-3.1-8b-instant' ? 'border-green-500 bg-green-500/20' : 'border-slate-700'"
+                        class="w-full p-3 rounded-xl bg-slate-800/50 border text-right hover:border-green-500/50 transition-all">
+                        <div class="flex items-center gap-3">
+                            <span class="text-xl">🚀</span>
+                            <div class="flex-1">
+                                <p class="font-medium text-white text-sm">سريع</p>
+                                <p class="text-xs text-slate-400">Llama 3.1 8B</p>
+                            </div>
+                            <template x-if="currentModel === 'llama-3.1-8b-instant'">
+                                <span class="text-green-400">✓</span>
+                            </template>
+                        </div>
+                    </button>
+
+                    <button @click="currentModel = 'llama-3.3-70b-versatile'"
+                        :class="currentModel === 'llama-3.3-70b-versatile' ? 'border-purple-500 bg-purple-500/20' : 'border-slate-700'"
+                        class="w-full p-3 rounded-xl bg-slate-800/50 border text-right hover:border-purple-500/50 transition-all">
+                        <div class="flex items-center gap-3">
+                            <span class="text-xl">🧠</span>
+                            <div class="flex-1">
+                                <p class="font-medium text-white text-sm">ذكي</p>
+                                <p class="text-xs text-slate-400">Llama 3.3 70B</p>
+                            </div>
+                            <template x-if="currentModel === 'llama-3.3-70b-versatile'">
+                                <span class="text-purple-400">✓</span>
+                            </template>
+                        </div>
+                    </button>
+                </div>
+            </div>
+
             <div class="mt-4 pt-4 border-t border-slate-700">
                 <p class="text-xs text-slate-500 text-center">
                     الخبير الحالي: <span class="text-cyan-400" x-text="getExpertName()"></span>
+                </p>
+                <p class="text-xs text-slate-500 text-center mt-1">
+                    الموديل: <span
+                        :class="currentModel === 'llama-3.1-8b-instant' ? 'text-green-400' : 'text-purple-400'"
+                        x-text="currentModel === 'llama-3.1-8b-instant' ? '🚀 سريع' : '🧠 ذكي'"></span>
                 </p>
             </div>
         </aside>
@@ -619,6 +661,7 @@
                 isUploading: false,
                 sidebarOpen: false,
                 currentMode: 'general',
+                currentModel: 'llama-3.1-8b-instant',
                 attachedImage: null,
                 imagePreviewUrl: null,
                 uploadedImagePath: null,
@@ -668,6 +711,9 @@
 
                         const response = await fetch('/upload', {
                             method: 'POST',
+                            headers: {
+                                'X-NABD-SECRET': 'nabd-secret-2026-v1'
+                            },
                             body: formData
                         });
 
@@ -724,7 +770,8 @@
                         const requestBody = {
                             prompt: message || 'صف هذه الصورة بالتفصيل',
                             thread_id: this.sessionId,
-                            agent_mode: this.currentMode
+                            agent_mode: this.currentMode,
+                            model_name: this.currentModel
                         };
 
                         if (imagePath) {
@@ -734,7 +781,8 @@
                         const response = await fetch('/run', {
                             method: 'POST',
                             headers: {
-                                'Content-Type': 'application/json'
+                                'Content-Type': 'application/json',
+                                'X-NABD-SECRET': 'nabd-secret-2026-v1'
                             },
                             body: JSON.stringify(requestBody)
                         });
@@ -795,7 +843,10 @@
                     try {
                         const response = await fetch('/speak', {
                             method: 'POST',
-                            headers: { 'Content-Type': 'application/json' },
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-NABD-SECRET': 'nabd-secret-2026-v1'
+                            },
                             body: JSON.stringify({ text: textContent })
                         });
 

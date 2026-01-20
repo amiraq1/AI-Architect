@@ -154,10 +154,15 @@ def get_system_prompt(agent_mode: str) -> str:
     return SYSTEM_PROMPTS.get(agent_mode, SYSTEM_PROMPTS["general"])
 
 
-def get_llm() -> ChatGroq:
-    """Initialize the Groq LLM with Llama 3.3."""
+def get_llm(model_name: str = "llama-3.1-8b-instant") -> ChatGroq:
+    """Initialize the Groq LLM with the specified model.
+    
+    Available models:
+    - llama-3.1-8b-instant (Fast)
+    - llama-3.3-70b-versatile (Smart)
+    """
     return ChatGroq(
-        model="llama-3.3-70b-versatile",
+        model=model_name,
         api_key=os.getenv("GROQ_API_KEY"),
         temperature=0
     )
@@ -165,7 +170,8 @@ def get_llm() -> ChatGroq:
 
 def planner_node(state: AgentState) -> dict:
     """Analyze the user query and create an execution plan."""
-    llm = get_llm()
+    model_name = state.get("model_name", "llama-3.1-8b-instant")
+    llm = get_llm(model_name)
     messages = state.get("messages", [])
     user_query = messages[-1].content if messages else ""
 
@@ -216,8 +222,9 @@ def executor_node(state: AgentState) -> dict:
     current_task = plan[0]
     remaining_plan = plan[1:]
     
+    model_name = state.get("model_name", "llama-3.1-8b-instant")
     tools = get_tools()
-    llm = get_llm().bind_tools(tools)
+    llm = get_llm(model_name).bind_tools(tools)
     
     executor_prompt = f"""
     Current Objective: {current_task}
@@ -254,7 +261,8 @@ def executor_node(state: AgentState) -> dict:
 
 def reviewer_node(state: AgentState) -> dict:
     """Review the execution results and decide next steps."""
-    llm = get_llm()
+    model_name = state.get("model_name", "llama-3.1-8b-instant")
+    llm = get_llm(model_name)
     
     plan = state.get("plan", [])
     current_step_index = state.get("current_step_index", 0)

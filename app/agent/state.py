@@ -14,4 +14,5 @@ class AgentState(TypedDict):
     is_complete: bool
     agent_mode: str
     image_path: Optional[str]
+    model_name: str
 
