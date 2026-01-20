@@ -28,12 +28,12 @@ psl=}
 // ─────────────────────────────────────────────────────────────────────────────
 
 action askNabd {
-  fn: import { askNabd } from "@src/server/actions",
-  entities: [User, Message] // Added Message entity
+  fn: import { askNabd } from "@src/server/actions.js",
+  entities: [User, Message]
 }
 
 query getChatHistory {
-  fn: import { getChatHistory } from "@src/server/queries",
+  fn: import { getChatHistory } from "@src/server/queries.js",
   entities: [User, Message]
 }
 
@@ -43,7 +43,7 @@ query getChatHistory {
 
 route NabdChatRoute { path: "/ai-chat", to: NabdChatPage }
 page NabdChatPage {
-  component: import { NabdChat } from "@src/client/app/NabdChat",
+  component: import { NabdChat } from "@src/client/app/NabdChat", 
   authRequired: true
 }
 */
@@ -57,7 +57,10 @@ page NabdChatPage {
 {
   "dependencies": {
     "axios": "^1.6.0",
-    "form-data": "^4.0.0"
+    "form-data": "^4.0.0",
+    "react-markdown": "^9.0.0",
+    "remark-gfm": "^4.0.0",
+    "react-syntax-highlighter": "^15.5.0"
   }
 }
 */
