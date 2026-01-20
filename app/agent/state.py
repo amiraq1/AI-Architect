@@ -1,4 +1,4 @@
-from typing import TypedDict, Annotated, List, Dict, Any
+from typing import TypedDict, Annotated, List, Dict, Any, Optional
 from langchain_core.messages import BaseMessage
 from langgraph.graph.message import add_messages
 
@@ -13,3 +13,5 @@ class AgentState(TypedDict):
     review_feedback: str
     is_complete: bool
     agent_mode: str
+    image_path: Optional[str]
+

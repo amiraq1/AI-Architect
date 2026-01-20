@@ -1,19 +1,42 @@
 import os
-from fastapi import FastAPI, HTTPException
+import uuid
+from typing import Optional
+from contextlib import asynccontextmanager
+from fastapi import FastAPI, HTTPException, Request, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from langchain_core.messages import HumanMessage
+from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 
-from app.agent.graph import create_agent_graph
+from app.agent.graph import workflow
 from app.agent.state import AgentState
 from app.tools.speech_ops import generate_audio
+
+
+# Create upload directory
+UPLOAD_DIR = "static/uploads"
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Lifespan context manager for persistent SQLite memory."""
+    os.makedirs("data", exist_ok=True)
+    
+    async with AsyncSqliteSaver.from_conn_string("data/memory.db") as checkpointer:
+        app.state.agent = workflow.compile(checkpointer=checkpointer)
+        print("✅ Permanent Memory Loaded! (SQLite)")
+        yield
+    
+    print("🛑 Memory Connection Closed.")
 
 
 app = FastAPI(
     title="Nabd (نبض) - Autonomous AI Agent",
     description="A high-performance autonomous agent that plans, executes, and delivers results.",
-    version="1.0.0"
+    version="1.0.0",
+    lifespan=lifespan
 )
 
 app.add_middleware(
@@ -29,6 +52,7 @@ class RunRequest(BaseModel):
     prompt: str
     thread_id: str = "default_user"
     agent_mode: str = "general"
+    image_path: Optional[str] = None
 
 
 class SpeakRequest(BaseModel):
@@ -38,6 +62,12 @@ class SpeakRequest(BaseModel):
 
 class SpeakResponse(BaseModel):
     audio_url: str
+
+
+class UploadResponse(BaseModel):
+    success: bool
+    image_path: str
+    filename: str
 
 
 class RunResponse(BaseModel):
@@ -53,11 +83,43 @@ async def health():
     return {"status": "healthy"}
 
 
+@app.post("/upload", response_model=UploadResponse)
+async def upload_image(file: UploadFile = File(...)):
+    """Upload an image file for vision analysis."""
+    
+    # Validate file type
+    allowed_types = ["image/jpeg", "image/png", "image/gif", "image/webp"]
+    if file.content_type not in allowed_types:
+        raise HTTPException(
+            status_code=400, 
+            detail=f"Invalid file type. Allowed: {', '.join(allowed_types)}"
+        )
+    
+    # Generate unique filename
+    ext = os.path.splitext(file.filename)[1] or ".jpg"
+    unique_filename = f"image_{uuid.uuid4().hex[:8]}{ext}"
+    file_path = os.path.join(UPLOAD_DIR, unique_filename)
+    
+    try:
+        # Save file
+        content = await file.read()
+        with open(file_path, "wb") as f:
+            f.write(content)
+        
+        return UploadResponse(
+            success=True,
+            image_path=file_path,
+            filename=unique_filename
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Upload error: {str(e)}")
+
+
 @app.post("/run", response_model=RunResponse)
-async def run_agent(request: RunRequest):
+async def run_agent(run_request: RunRequest, request: Request):
     """Execute the autonomous agent with the given prompt."""
     
-    if not request.prompt.strip():
+    if not run_request.prompt.strip():
         raise HTTPException(status_code=400, detail="Prompt cannot be empty")
     
     groq_key = os.getenv("GROQ_API_KEY")
@@ -69,10 +131,16 @@ async def run_agent(request: RunRequest):
         )
     
     try:
-        agent_graph = create_agent_graph(request.agent_mode)
+        # Access the compiled agent from app state
+        agent_graph = request.app.state.agent
+        
+        # Build prompt with image context if provided
+        prompt = run_request.prompt
+        if run_request.image_path:
+            prompt = f"{prompt}\n\n[Image attached: {run_request.image_path}]"
         
         initial_state: AgentState = {
-            "messages": [HumanMessage(content=request.prompt)],
+            "messages": [HumanMessage(content=prompt)],
             "plan": [],
             "current_step": "",
             "current_step_index": 0,
@@ -80,10 +148,11 @@ async def run_agent(request: RunRequest):
             "final_report": "",
             "review_feedback": "",
             "is_complete": False,
-            "agent_mode": request.agent_mode
+            "agent_mode": run_request.agent_mode,
+            "image_path": run_request.image_path
         }
         
-        config = {"configurable": {"thread_id": request.thread_id}}
+        config = {"configurable": {"thread_id": run_request.thread_id}}
         final_state = await agent_graph.ainvoke(initial_state, config=config)
         
         return RunResponse(

@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -12,79 +13,116 @@
         * {
             font-family: 'Cairo', sans-serif;
         }
-        
+
         .glassmorphism {
             background: rgba(15, 23, 42, 0.7);
             backdrop-filter: blur(20px);
             border: 1px solid rgba(56, 189, 248, 0.2);
         }
-        
+
         .neon-glow {
             box-shadow: 0 0 20px rgba(56, 189, 248, 0.3),
-                        0 0 40px rgba(56, 189, 248, 0.1);
+                0 0 40px rgba(56, 189, 248, 0.1);
         }
-        
+
         .neon-text {
             text-shadow: 0 0 10px rgba(56, 189, 248, 0.8),
-                         0 0 20px rgba(56, 189, 248, 0.5);
+                0 0 20px rgba(56, 189, 248, 0.5);
         }
-        
+
         @keyframes pulse-dot {
-            0%, 100% {
+
+            0%,
+            100% {
                 transform: scale(1);
                 opacity: 1;
             }
+
             50% {
                 transform: scale(1.5);
                 opacity: 0.5;
             }
         }
-        
+
         .pulse-animation {
             animation: pulse-dot 1.5s ease-in-out infinite;
         }
-        
+
         @keyframes heartbeat-line {
-            0% { transform: scaleX(0); opacity: 0; }
-            10% { transform: scaleX(0.1); opacity: 1; }
-            20% { transform: scaleX(0.2) scaleY(1); }
-            25% { transform: scaleX(0.25) scaleY(3); }
-            30% { transform: scaleX(0.3) scaleY(0.5); }
-            35% { transform: scaleX(0.35) scaleY(2); }
-            40% { transform: scaleX(0.4) scaleY(1); }
-            100% { transform: scaleX(1); opacity: 0; }
+            0% {
+                transform: scaleX(0);
+                opacity: 0;
+            }
+
+            10% {
+                transform: scaleX(0.1);
+                opacity: 1;
+            }
+
+            20% {
+                transform: scaleX(0.2) scaleY(1);
+            }
+
+            25% {
+                transform: scaleX(0.25) scaleY(3);
+            }
+
+            30% {
+                transform: scaleX(0.3) scaleY(0.5);
+            }
+
+            35% {
+                transform: scaleX(0.35) scaleY(2);
+            }
+
+            40% {
+                transform: scaleX(0.4) scaleY(1);
+            }
+
+            100% {
+                transform: scaleX(1);
+                opacity: 0;
+            }
         }
-        
+
         .heartbeat-wave {
             animation: heartbeat-line 1.5s ease-in-out infinite;
         }
-        
+
         @keyframes gradient-shift {
-            0%, 100% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
+
+            0%,
+            100% {
+                background-position: 0% 50%;
+            }
+
+            50% {
+                background-position: 100% 50%;
+            }
         }
-        
+
         .gradient-animate {
             background: linear-gradient(90deg, #0f172a, #1e3a5f, #0f172a);
             background-size: 200% 200%;
             animation: gradient-shift 3s ease infinite;
         }
-        
+
         .message-enter {
             animation: fadeInUp 0.3s ease-out;
         }
-        
+
         @keyframes fadeInUp {
             from {
                 opacity: 0;
                 transform: translateY(20px);
             }
+
             to {
                 opacity: 1;
                 transform: translateY(0);
             }
         }
-        
+
         .prose pre {
             background: rgba(0, 0, 0, 0.5);
             border-radius: 8px;
@@ -92,75 +130,79 @@
             overflow-x: auto;
             border: 1px solid rgba(56, 189, 248, 0.2);
         }
-        
+
         .prose code {
             color: #38bdf8;
             background: rgba(56, 189, 248, 0.1);
             padding: 0.2rem 0.4rem;
             border-radius: 4px;
         }
-        
+
         .prose pre code {
             background: transparent;
             padding: 0;
         }
-        
+
         .prose table {
             width: 100%;
             border-collapse: collapse;
             margin: 1rem 0;
         }
-        
-        .prose th, .prose td {
+
+        .prose th,
+        .prose td {
             border: 1px solid rgba(56, 189, 248, 0.3);
             padding: 0.5rem 1rem;
             text-align: right;
         }
-        
+
         .prose th {
             background: rgba(56, 189, 248, 0.1);
         }
-        
-        .prose h1, .prose h2, .prose h3 {
+
+        .prose h1,
+        .prose h2,
+        .prose h3 {
             color: #38bdf8;
             margin-top: 1.5rem;
             margin-bottom: 0.5rem;
         }
-        
-        .prose ul, .prose ol {
+
+        .prose ul,
+        .prose ol {
             padding-right: 1.5rem;
             margin: 0.5rem 0;
         }
-        
+
         .prose li {
             margin: 0.25rem 0;
         }
-        
+
         .prose a {
             color: #38bdf8;
             text-decoration: underline;
         }
-        
+
         .prose blockquote {
             border-right: 4px solid #38bdf8;
             padding-right: 1rem;
             margin: 1rem 0;
             color: #94a3b8;
         }
-        
+
         ::-webkit-scrollbar {
             width: 8px;
         }
-        
+
         ::-webkit-scrollbar-track {
             background: rgba(15, 23, 42, 0.5);
         }
-        
+
         ::-webkit-scrollbar-thumb {
             background: rgba(56, 189, 248, 0.3);
             border-radius: 4px;
         }
-        
+
         ::-webkit-scrollbar-thumb:hover {
             background: rgba(56, 189, 248, 0.5);
         }
@@ -188,13 +230,40 @@
                 opacity: 0;
                 transform: translateX(20px);
             }
+
             to {
                 opacity: 1;
                 transform: translateX(0);
             }
         }
+
+        .image-preview {
+            animation: fadeInScale 0.3s ease-out;
+        }
+
+        @keyframes fadeInScale {
+            from {
+                opacity: 0;
+                transform: scale(0.8);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .upload-btn:hover {
+            background: rgba(56, 189, 248, 0.2);
+        }
+
+        .upload-btn.has-image {
+            color: #10b981;
+            background: rgba(16, 185, 129, 0.2);
+        }
     </style>
 </head>
+
 <body class="bg-slate-900 min-h-screen text-white" x-data="nabdApp()">
     <div class="fixed inset-0 overflow-hidden pointer-events-none">
         <div class="absolute top-0 left-1/4 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl"></div>
@@ -202,29 +271,30 @@
     </div>
 
     <div class="relative z-10 flex h-screen">
-        <button @click="sidebarOpen = !sidebarOpen" 
-                class="lg:hidden fixed top-4 left-4 z-50 p-2 rounded-lg bg-slate-800 border border-slate-700 hover:bg-slate-700 transition-colors">
+        <button @click="sidebarOpen = !sidebarOpen"
+            class="lg:hidden fixed top-4 left-4 z-50 p-2 rounded-lg bg-slate-800 border border-slate-700 hover:bg-slate-700 transition-colors">
             <svg class="w-6 h-6 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16">
+                </path>
             </svg>
         </button>
 
         <aside :class="sidebarOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'"
-               class="fixed lg:static inset-y-0 left-0 w-72 glassmorphism border-l border-slate-700/50 p-4 flex flex-col z-40 transition-transform duration-300 sidebar-enter">
-            
+            class="fixed lg:static inset-y-0 left-0 w-72 glassmorphism border-l border-slate-700/50 p-4 flex flex-col z-40 transition-transform duration-300 sidebar-enter">
+
             <div class="flex items-center justify-between mb-6">
-                <h2 class="text-lg font-semibold text-cyan-400">اختر الخبير</h2>
+                <h2 class="text-lg font-semibold text-cyan-400">نبض | الخبراء</h2>
                 <button @click="sidebarOpen = false" class="lg:hidden p-1 hover:bg-slate-700 rounded">
                     <svg class="w-5 h-5 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                        </path>
                     </svg>
                 </button>
             </div>
 
             <div class="space-y-3 flex-1">
-                <button @click="selectExpert('general')" 
-                        :class="currentMode === 'general' ? 'active' : ''"
-                        class="expert-card w-full p-4 rounded-xl bg-slate-800/50 border border-slate-700 text-right hover:border-cyan-500/50">
+                <button @click="selectExpert('general')" :class="currentMode === 'general' ? 'active' : ''"
+                    class="expert-card w-full p-4 rounded-xl bg-slate-800/50 border border-slate-700 text-right hover:border-cyan-500/50">
                     <div class="flex items-center gap-3">
                         <span class="text-2xl">🤖</span>
                         <div>
@@ -234,9 +304,8 @@
                     </div>
                 </button>
 
-                <button @click="selectExpert('coder')" 
-                        :class="currentMode === 'coder' ? 'active' : ''"
-                        class="expert-card w-full p-4 rounded-xl bg-slate-800/50 border border-slate-700 text-right hover:border-cyan-500/50">
+                <button @click="selectExpert('coder')" :class="currentMode === 'coder' ? 'active' : ''"
+                    class="expert-card w-full p-4 rounded-xl bg-slate-800/50 border border-slate-700 text-right hover:border-cyan-500/50">
                     <div class="flex items-center gap-3">
                         <span class="text-2xl">👨‍💻</span>
                         <div>
@@ -246,9 +315,8 @@
                     </div>
                 </button>
 
-                <button @click="selectExpert('writer')" 
-                        :class="currentMode === 'writer' ? 'active' : ''"
-                        class="expert-card w-full p-4 rounded-xl bg-slate-800/50 border border-slate-700 text-right hover:border-cyan-500/50">
+                <button @click="selectExpert('writer')" :class="currentMode === 'writer' ? 'active' : ''"
+                    class="expert-card w-full p-4 rounded-xl bg-slate-800/50 border border-slate-700 text-right hover:border-cyan-500/50">
                     <div class="flex items-center gap-3">
                         <span class="text-2xl">📝</span>
                         <div>
@@ -258,9 +326,8 @@
                     </div>
                 </button>
 
-                <button @click="selectExpert('researcher')" 
-                        :class="currentMode === 'researcher' ? 'active' : ''"
-                        class="expert-card w-full p-4 rounded-xl bg-slate-800/50 border border-slate-700 text-right hover:border-cyan-500/50">
+                <button @click="selectExpert('researcher')" :class="currentMode === 'researcher' ? 'active' : ''"
+                    class="expert-card w-full p-4 rounded-xl bg-slate-800/50 border border-slate-700 text-right hover:border-cyan-500/50">
                     <div class="flex items-center gap-3">
                         <span class="text-2xl">🔍</span>
                         <div>
@@ -278,27 +345,29 @@
             </div>
         </aside>
 
-        <div @click="sidebarOpen = false" 
-             x-show="sidebarOpen" 
-             class="fixed inset-0 bg-black/50 z-30 lg:hidden"></div>
+        <div @click="sidebarOpen = false" x-show="sidebarOpen" class="fixed inset-0 bg-black/50 z-30 lg:hidden"></div>
 
         <div class="flex-1 flex flex-col h-screen max-w-4xl mx-auto p-4">
             <header class="flex items-center justify-center py-6 mb-4">
                 <div class="flex items-center gap-4">
                     <div class="relative">
                         <div class="w-4 h-4 bg-cyan-400 rounded-full pulse-animation"></div>
-                        <div class="absolute inset-0 w-4 h-4 bg-cyan-400 rounded-full opacity-50 pulse-animation" style="animation-delay: 0.5s;"></div>
+                        <div class="absolute inset-0 w-4 h-4 bg-cyan-400 rounded-full opacity-50 pulse-animation"
+                            style="animation-delay: 0.5s;"></div>
                     </div>
                     <div class="flex items-center gap-2">
                         <h1 class="text-4xl font-bold neon-text">
                             <span class="text-cyan-400">نبض</span>
                             <span class="text-slate-400 text-2xl mr-2">| Nabd</span>
                         </h1>
-                        <span class="px-3 py-1 text-xs rounded-full bg-cyan-500/20 text-cyan-400 border border-cyan-500/30" x-text="getExpertBadge()"></span>
+                        <span
+                            class="px-3 py-1 text-xs rounded-full bg-cyan-500/20 text-cyan-400 border border-cyan-500/30"
+                            x-text="getExpertBadge()"></span>
                     </div>
                     <div class="relative">
                         <div class="w-4 h-4 bg-cyan-400 rounded-full pulse-animation"></div>
-                        <div class="absolute inset-0 w-4 h-4 bg-cyan-400 rounded-full opacity-50 pulse-animation" style="animation-delay: 0.5s;"></div>
+                        <div class="absolute inset-0 w-4 h-4 bg-cyan-400 rounded-full opacity-50 pulse-animation"
+                            style="animation-delay: 0.5s;"></div>
                     </div>
                 </div>
             </header>
@@ -311,9 +380,12 @@
                 <div class="flex-1 overflow-y-auto p-6 space-y-4" id="chat-container" x-ref="chatContainer">
                     <template x-if="messages.length === 0">
                         <div class="flex flex-col items-center justify-center h-full text-center">
-                            <div class="w-20 h-20 mb-6 rounded-full bg-gradient-to-br from-cyan-400/20 to-blue-500/20 flex items-center justify-center neon-glow">
-                                <svg class="w-10 h-10 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                            <div
+                                class="w-20 h-20 mb-6 rounded-full bg-gradient-to-br from-cyan-400/20 to-blue-500/20 flex items-center justify-center neon-glow">
+                                <svg class="w-10 h-10 text-cyan-400" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M13 10V3L4 14h7v7l9-11h-7z"></path>
                                 </svg>
                             </div>
                             <h2 class="text-2xl font-semibold text-cyan-400 mb-2">مرحباً بك في نبض</h2>
@@ -322,16 +394,16 @@
                                 <br>اسألني أي شيء!
                             </p>
                             <div class="mt-6 flex flex-wrap gap-2 justify-center">
-                                <button @click="sendMessage('ما هي آخر أخبار التكنولوجيا؟')" 
-                                        class="px-4 py-2 rounded-full bg-slate-800 hover:bg-slate-700 text-sm text-slate-300 transition-colors border border-slate-700">
+                                <button @click="sendMessage('ما هي آخر أخبار التكنولوجيا؟')"
+                                    class="px-4 py-2 rounded-full bg-slate-800 hover:bg-slate-700 text-sm text-slate-300 transition-colors border border-slate-700">
                                     آخر أخبار التكنولوجيا
                                 </button>
-                                <button @click="sendMessage('احسب لي 15% من 250')" 
-                                        class="px-4 py-2 rounded-full bg-slate-800 hover:bg-slate-700 text-sm text-slate-300 transition-colors border border-slate-700">
+                                <button @click="sendMessage('احسب لي 15% من 250')"
+                                    class="px-4 py-2 rounded-full bg-slate-800 hover:bg-slate-700 text-sm text-slate-300 transition-colors border border-slate-700">
                                     حساب النسبة المئوية
                                 </button>
-                                <button @click="sendMessage('اكتب لي مقالة قصيرة عن الذكاء الاصطناعي')" 
-                                        class="px-4 py-2 rounded-full bg-slate-800 hover:bg-slate-700 text-sm text-slate-300 transition-colors border border-slate-700">
+                                <button @click="sendMessage('اكتب لي مقالة قصيرة عن الذكاء الاصطناعي')"
+                                    class="px-4 py-2 rounded-full bg-slate-800 hover:bg-slate-700 text-sm text-slate-300 transition-colors border border-slate-700">
                                     كتابة مقالة
                                 </button>
                             </div>
@@ -339,14 +411,16 @@
                     </template>
 
                     <template x-for="(msg, index) in messages" :key="index">
-                        <div class="message-enter" :class="msg.type === 'user' ? 'flex justify-start' : 'flex justify-end'">
+                        <div class="message-enter"
+                            :class="msg.type === 'user' ? 'flex justify-start' : 'flex justify-end'">
                             <div :class="msg.type === 'user' 
                                         ? 'bg-cyan-500/20 border-cyan-500/30 max-w-[85%]' 
                                         : 'bg-slate-800/80 border-slate-700 max-w-[95%]'"
-                                 class="rounded-2xl p-4 border">
+                                class="rounded-2xl p-4 border">
                                 <template x-if="msg.type === 'user'">
                                     <div class="flex items-start gap-3">
-                                        <div class="w-8 h-8 rounded-full bg-cyan-500/30 flex items-center justify-center flex-shrink-0">
+                                        <div
+                                            class="w-8 h-8 rounded-full bg-cyan-500/30 flex items-center justify-center flex-shrink-0">
                                             <svg class="w-4 h-4 text-cyan-400" fill="currentColor" viewBox="0 0 20 20">
                                                 <path d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"></path>
                                             </svg>
@@ -357,42 +431,54 @@
                                 <template x-if="msg.type === 'assistant'">
                                     <div>
                                         <div class="flex items-center gap-2 mb-3 text-cyan-400">
-                                            <div class="w-6 h-6 rounded-full bg-cyan-500/30 flex items-center justify-center">
+                                            <div
+                                                class="w-6 h-6 rounded-full bg-cyan-500/30 flex items-center justify-center">
                                                 <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                                                     <path d="M13 10V3L4 14h7v7l9-11h-7z"></path>
                                                 </svg>
                                             </div>
                                             <span class="text-sm font-medium">نبض</span>
-                                            <span class="text-xs px-2 py-0.5 rounded-full bg-slate-700 text-slate-300" x-text="msg.expertBadge || 'مساعد عام'"></span>
+                                            <span class="text-xs px-2 py-0.5 rounded-full bg-slate-700 text-slate-300"
+                                                x-text="msg.expertBadge || 'مساعد عام'"></span>
                                             <template x-if="msg.plan && msg.plan.length > 0">
                                                 <span class="text-xs text-slate-500">
                                                     | <span x-text="msg.steps_executed"></span> خطوة
                                                 </span>
                                             </template>
-                                            <button @click="speakMessage(index)" 
-                                                    :disabled="msg.isSpeaking"
-                                                    class="mr-auto p-1.5 rounded-lg hover:bg-cyan-500/20 transition-colors group"
-                                                    :class="msg.isSpeaking ? 'animate-pulse' : ''">
+                                            <button @click="speakMessage(index)" :disabled="msg.isSpeaking"
+                                                class="mr-auto p-1.5 rounded-lg hover:bg-cyan-500/20 transition-colors group"
+                                                :class="msg.isSpeaking ? 'animate-pulse' : ''">
                                                 <template x-if="!msg.isSpeaking">
-                                                    <svg class="w-4 h-4 text-slate-400 group-hover:text-cyan-400" fill="currentColor" viewBox="0 0 20 20">
-                                                        <path fill-rule="evenodd" d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM14.657 2.929a1 1 0 011.414 0A9.972 9.972 0 0119 10a9.972 9.972 0 01-2.929 7.071 1 1 0 01-1.414-1.414A7.971 7.971 0 0017 10c0-2.21-.894-4.208-2.343-5.657a1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0A5.983 5.983 0 0115 10a5.984 5.984 0 01-1.757 4.243 1 1 0 01-1.415-1.415A3.984 3.984 0 0013 10a3.983 3.983 0 00-1.172-2.828 1 1 0 010-1.415z" clip-rule="evenodd"></path>
+                                                    <svg class="w-4 h-4 text-slate-400 group-hover:text-cyan-400"
+                                                        fill="currentColor" viewBox="0 0 20 20">
+                                                        <path fill-rule="evenodd"
+                                                            d="M9.383 3.076A1 1 0 0110 4v12a1 1 0 01-1.707.707L4.586 13H2a1 1 0 01-1-1V8a1 1 0 011-1h2.586l3.707-3.707a1 1 0 011.09-.217zM14.657 2.929a1 1 0 011.414 0A9.972 9.972 0 0119 10a9.972 9.972 0 01-2.929 7.071 1 1 0 01-1.414-1.414A7.971 7.971 0 0017 10c0-2.21-.894-4.208-2.343-5.657a1 1 0 010-1.414zm-2.829 2.828a1 1 0 011.415 0A5.983 5.983 0 0115 10a5.984 5.984 0 01-1.757 4.243 1 1 0 01-1.415-1.415A3.984 3.984 0 0013 10a3.983 3.983 0 00-1.172-2.828 1 1 0 010-1.415z"
+                                                            clip-rule="evenodd"></path>
                                                     </svg>
                                                 </template>
                                                 <template x-if="msg.isSpeaking">
-                                                    <svg class="w-4 h-4 text-cyan-400 animate-spin" fill="none" viewBox="0 0 24 24">
-                                                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                                    <svg class="w-4 h-4 text-cyan-400 animate-spin" fill="none"
+                                                        viewBox="0 0 24 24">
+                                                        <circle class="opacity-25" cx="12" cy="12" r="10"
+                                                            stroke="currentColor" stroke-width="4"></circle>
+                                                        <path class="opacity-75" fill="currentColor"
+                                                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                                        </path>
                                                     </svg>
                                                 </template>
                                             </button>
                                         </div>
-                                        <div class="prose prose-invert text-slate-200 leading-relaxed" x-html="msg.content"></div>
+                                        <div class="prose prose-invert text-slate-200 leading-relaxed"
+                                            x-html="msg.content"></div>
                                         <template x-if="msg.file">
-                                            <a :href="'/files/' + msg.file" 
-                                               download
-                                               class="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 rounded-lg text-emerald-400 transition-colors">
-                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                                            <a :href="'/files/' + msg.file" download
+                                                class="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-emerald-500/20 hover:bg-emerald-500/30 border border-emerald-500/40 rounded-lg text-emerald-400 transition-colors">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor"
+                                                    viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round"
+                                                        stroke-width="2"
+                                                        d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4">
+                                                    </path>
                                                 </svg>
                                                 <span>تحميل الملف</span>
                                                 <span class="text-xs text-emerald-300" x-text="msg.file"></span>
@@ -403,8 +489,9 @@
                                                 <p class="text-xs text-slate-500 mb-2">الخطة المنفذة:</p>
                                                 <div class="flex flex-wrap gap-2">
                                                     <template x-for="(step, i) in msg.plan" :key="i">
-                                                        <span class="text-xs px-2 py-1 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20"
-                                                              x-text="step"></span>
+                                                        <span
+                                                            class="text-xs px-2 py-1 rounded-full bg-cyan-500/10 text-cyan-400 border border-cyan-500/20"
+                                                            x-text="step"></span>
                                                     </template>
                                                 </div>
                                             </div>
@@ -413,8 +500,11 @@
                                 </template>
                                 <template x-if="msg.type === 'error'">
                                     <div class="flex items-start gap-3 text-red-400">
-                                        <svg class="w-5 h-5 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
-                                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clip-rule="evenodd"></path>
+                                        <svg class="w-5 h-5 flex-shrink-0 mt-0.5" fill="currentColor"
+                                            viewBox="0 0 20 20">
+                                            <path fill-rule="evenodd"
+                                                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                                                clip-rule="evenodd"></path>
                                         </svg>
                                         <p x-text="msg.content"></p>
                                     </div>
@@ -429,19 +519,19 @@
                                 <div class="flex items-center gap-3 text-cyan-400">
                                     <div class="flex items-center gap-1">
                                         <div class="w-2 h-2 bg-cyan-400 rounded-full pulse-animation"></div>
-                                        <div class="w-2 h-2 bg-cyan-400 rounded-full pulse-animation" style="animation-delay: 0.2s;"></div>
-                                        <div class="w-2 h-2 bg-cyan-400 rounded-full pulse-animation" style="animation-delay: 0.4s;"></div>
+                                        <div class="w-2 h-2 bg-cyan-400 rounded-full pulse-animation"
+                                            style="animation-delay: 0.2s;"></div>
+                                        <div class="w-2 h-2 bg-cyan-400 rounded-full pulse-animation"
+                                            style="animation-delay: 0.4s;"></div>
                                     </div>
                                     <span class="text-sm">نبض يفكر...</span>
                                 </div>
                                 <div class="mt-4 h-8 flex items-center justify-center overflow-hidden">
                                     <svg class="w-full h-8" viewBox="0 0 200 40">
-                                        <path class="heartbeat-wave" 
-                                              d="M0,20 L30,20 L40,20 L50,5 L60,35 L70,15 L80,25 L90,20 L200,20" 
-                                              fill="none" 
-                                              stroke="#38bdf8" 
-                                              stroke-width="2"
-                                              transform-origin="left center"/>
+                                        <path class="heartbeat-wave"
+                                            d="M0,20 L30,20 L40,20 L50,5 L60,35 L70,15 L80,25 L90,20 L200,20"
+                                            fill="none" stroke="#38bdf8" stroke-width="2"
+                                            transform-origin="left center" />
                                     </svg>
                                 </div>
                                 <p class="text-xs text-slate-500 mt-2 text-center">جاري التخطيط والتنفيذ...</p>
@@ -451,18 +541,63 @@
                 </div>
 
                 <div class="p-4 border-t border-slate-700/50">
+                    <!-- Image Preview -->
+                    <template x-if="attachedImage">
+                        <div class="mb-3 image-preview">
+                            <div
+                                class="inline-flex items-center gap-3 bg-slate-800/80 border border-slate-700 rounded-xl p-2 pr-4">
+                                <img :src="imagePreviewUrl" class="w-16 h-16 object-cover rounded-lg" />
+                                <div class="flex-1">
+                                    <p class="text-sm text-white truncate max-w-[150px]" x-text="attachedImage.name">
+                                    </p>
+                                    <p class="text-xs text-slate-400">صورة مرفقة</p>
+                                </div>
+                                <button @click="removeImage()"
+                                    class="p-1.5 hover:bg-red-500/20 rounded-lg transition-colors">
+                                    <svg class="w-4 h-4 text-red-400" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M6 18L18 6M6 6l12 12"></path>
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    </template>
+
                     <form @submit.prevent="sendMessage()" class="flex gap-3">
-                        <input type="text" 
-                               x-model="userInput"
-                               :disabled="isLoading"
-                               placeholder="اكتب رسالتك هنا..."
-                               class="flex-1 bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500/50 focus:ring-2 focus:ring-cyan-500/20 transition-all disabled:opacity-50">
-                        <button type="submit"
-                                :disabled="isLoading || !userInput.trim()"
-                                class="px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-xl font-medium hover:from-cyan-400 hover:to-blue-400 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 neon-glow">
+                        <!-- Hidden File Input -->
+                        <input type="file" x-ref="fileInput" @change="handleImageSelect($event)" accept="image/*"
+                            class="hidden">
+
+                        <!-- Upload Button -->
+                        <button type="button" @click="$refs.fileInput.click()" :disabled="isLoading || isUploading"
+                            :class="attachedImage ? 'has-image' : ''"
+                            class="upload-btn p-3 rounded-xl border border-slate-700 text-slate-400 hover:text-cyan-400 transition-all disabled:opacity-50">
+                            <template x-if="isUploading">
+                                <svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                        stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor"
+                                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"></path>
+                                </svg>
+                            </template>
+                            <template x-if="!isUploading">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13">
+                                    </path>
+                                </svg>
+                            </template>
+                        </button>
+
+                        <input type="text" x-model="userInput" :disabled="isLoading" placeholder="اكتب رسالتك هنا..."
+                            class="flex-1 bg-slate-800/50 border border-slate-700 rounded-xl px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500/50 focus:ring-2 focus:ring-cyan-500/20 transition-all disabled:opacity-50">
+                        <button type="submit" :disabled="isLoading || (!userInput.trim() && !attachedImage)"
+                            class="px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-500 rounded-xl font-medium hover:from-cyan-400 hover:to-blue-400 transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2 neon-glow">
                             <span>إرسال</span>
                             <svg class="w-5 h-5 rotate-180" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
                             </svg>
                         </button>
                     </form>
@@ -481,8 +616,12 @@
                 userInput: '',
                 messages: [],
                 isLoading: false,
+                isUploading: false,
                 sidebarOpen: false,
                 currentMode: 'general',
+                attachedImage: null,
+                imagePreviewUrl: null,
+                uploadedImagePath: null,
                 sessionId: localStorage.getItem('nabd_session_id') || (() => {
                     const id = 'user_' + Math.random().toString(36).substr(2, 9);
                     localStorage.setItem('nabd_session_id', id);
@@ -509,31 +648,95 @@
                     return this.expertNames[this.currentMode] || 'مساعد عام';
                 },
 
+                async handleImageSelect(event) {
+                    const file = event.target.files[0];
+                    if (!file) return;
+
+                    // Validate file type
+                    if (!file.type.startsWith('image/')) {
+                        alert('الرجاء اختيار ملف صورة');
+                        return;
+                    }
+
+                    this.attachedImage = file;
+                    this.imagePreviewUrl = URL.createObjectURL(file);
+                    this.isUploading = true;
+
+                    try {
+                        const formData = new FormData();
+                        formData.append('file', file);
+
+                        const response = await fetch('/upload', {
+                            method: 'POST',
+                            body: formData
+                        });
+
+                        const data = await response.json();
+                        if (response.ok) {
+                            this.uploadedImagePath = data.image_path;
+                        } else {
+                            throw new Error(data.detail || 'فشل رفع الصورة');
+                        }
+                    } catch (error) {
+                        console.error('Upload error:', error);
+                        this.removeImage();
+                        alert('فشل رفع الصورة: ' + error.message);
+                    } finally {
+                        this.isUploading = false;
+                    }
+                },
+
+                removeImage() {
+                    if (this.imagePreviewUrl) {
+                        URL.revokeObjectURL(this.imagePreviewUrl);
+                    }
+                    this.attachedImage = null;
+                    this.imagePreviewUrl = null;
+                    this.uploadedImagePath = null;
+                    this.$refs.fileInput.value = '';
+                },
+
                 async sendMessage(presetMessage = null) {
                     const message = presetMessage || this.userInput.trim();
-                    if (!message || this.isLoading) return;
+                    if ((!message && !this.attachedImage) || this.isLoading) return;
+
+                    // Build user message display
+                    const userMessageContent = this.attachedImage
+                        ? `${message || 'تحليل الصورة'} 📷`
+                        : message;
 
                     this.messages.push({
                         type: 'user',
-                        content: message
+                        content: userMessageContent,
+                        hasImage: !!this.attachedImage,
+                        imageUrl: this.imagePreviewUrl
                     });
+
+                    const imagePath = this.uploadedImagePath;
                     this.userInput = '';
+                    this.removeImage();
                     this.isLoading = true;
                     this.scrollToBottom();
 
                     const currentExpertBadge = this.getExpertName();
 
                     try {
+                        const requestBody = {
+                            prompt: message || 'صف هذه الصورة بالتفصيل',
+                            thread_id: this.sessionId,
+                            agent_mode: this.currentMode
+                        };
+
+                        if (imagePath) {
+                            requestBody.image_path = imagePath;
+                        }
+
                         const response = await fetch('/run', {
                             method: 'POST',
                             headers: {
                                 'Content-Type': 'application/json'
                             },
-                            body: JSON.stringify({ 
-                                prompt: message, 
-                                thread_id: this.sessionId,
-                                agent_mode: this.currentMode
-                            })
+                            body: JSON.stringify(requestBody)
                         });
 
                         const data = await response.json();
@@ -551,7 +754,7 @@
                                 detectedFile = fileMatch[1];
                             }
                         }
-                        
+
                         this.messages.push({
                             type: 'assistant',
                             content: marked.parse(data.result),
@@ -602,7 +805,7 @@
                         }
 
                         const data = await response.json();
-                        
+
                         const audio = new Audio(data.audio_url);
                         audio.oncanplaythrough = () => {
                             audio.play();
@@ -623,4 +826,5 @@
         }
     </script>
 </body>
+
 </html>

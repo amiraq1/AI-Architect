@@ -4,13 +4,11 @@ from typing import Literal
 from langchain_groq import ChatGroq
 from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from langgraph.graph import StateGraph, END
-from langgraph.checkpoint.memory import MemorySaver
 
 from app.agent.state import AgentState
 from app.tools.defined_tools import get_tools, web_search, file_writer, python_repl
 
 os.makedirs("data", exist_ok=True)
-memory = MemorySaver()
 
 
 SYSTEM_PROMPTS = {
@@ -36,6 +34,17 @@ CAPABILITIES:
 - get_youtube_transcript: Watch YouTube videos by reading their transcripts. Use this to summarize, analyze, or extract information from videos.
 - analyze_repo: Inspect GitHub repositories to read code, review architecture, or understand projects. Can read specific files or get repo overview.
 - generate_image: Create images from text descriptions. If the user asks for a picture, drawing, logo, illustration, or any visual design, use this tool with a detailed, descriptive prompt.
+- analyze_image: SEE and understand images! If the user attaches an image (indicated by [Image attached: path]), ALWAYS use this tool. Pass the user's question as 'query' and the image path as 'image_path'. This lets you describe, analyze, extract text (OCR), identify objects, and answer questions about images.
+- browse_website: A REAL headless browser that renders JavaScript! Use action='read' to extract content from complex SPAs/React/Vue sites. Use action='screenshot' to capture a visual image of any webpage and show it to the user.
+
+VISION PROTOCOL:
+- If you see "[Image attached: ...]" in the user's message, you MUST call analyze_image with that path.
+- Never ignore attached images. Always analyze them first before responding.
+
+BROWSER PROTOCOL:
+- For JavaScript-heavy sites (Twitter, LinkedIn, modern SPAs), use browse_website instead of web_search.
+- When the user asks "show me" or "what does X look like", use browse_website with action='screenshot'.
+- The screenshot will be saved and displayed as a markdown image.
 """,
 
     "coder": """
@@ -348,11 +357,10 @@ def check_plan(state: AgentState) -> Literal["executor", "writer"]:
     return "writer"
 
 
-def create_agent_graph(agent_mode: str = "general"):
-    """Create and compile the agent state graph with memory.
+def create_agent_workflow() -> StateGraph:
+    """Create the agent state graph (without compilation).
     
-    Note: agent_mode is passed through the state, not used here directly.
-    The parameter is kept for API compatibility.
+    The graph will be compiled in main.py with AsyncSqliteSaver for persistence.
     """
     workflow = StateGraph(AgentState)
     
@@ -365,4 +373,8 @@ def create_agent_graph(agent_mode: str = "general"):
     workflow.add_conditional_edges("executor", check_plan)
     workflow.add_edge("writer", END)
     
-    return workflow.compile(checkpointer=memory)
+    return workflow
+
+
+# Export the workflow (uncompiled)
+workflow = create_agent_workflow()
