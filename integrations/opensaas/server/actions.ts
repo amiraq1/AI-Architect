@@ -17,13 +17,10 @@ export const askNabd: AskNabd<NabdArgs, string> = async (args, context) => {
   }
 
   // 2. التحقق من الاشتراك وميزات الـ Premium
-  // (Model Names mapped to simple terms for check)
   const isSmartModel = args.modelName === 'llama-3.3-70b-versatile' || args.modelName === 'smart';
   const isCoderMode = args.agentMode === 'coder';
 
   const isPremiumFeature = isSmartModel || isCoderMode;
-
-  // تحقق من حالة الاشتراك (يأتي جاهزاً مع OpenSaaS)
   const hasValidSubscription = context.user.subscriptionStatus === 'active';
 
   if (isPremiumFeature && !hasValidSubscription) {
@@ -41,10 +38,15 @@ export const askNabd: AskNabd<NabdArgs, string> = async (args, context) => {
 
   // 4. الاتصال بسيرفر "نبض" (Replit)
   try {
-    const nabdUrl = process.env.NABD_API_URL || 'https://YOUR-REPL-URL.replit.app';
+    // ⚠️ هام: تأكد من ضبط متغير البيئة NABD_API_URL في ملف .env.server
+    // مثال: https://nabd-backend.replit.app
+    const nabdUrl = process.env.NABD_API_URL;
     const nabdKey = process.env.NABD_SECRET_KEY;
 
-    if (!nabdUrl) { throw new HttpError(500, 'Configuration error: NABD_API_URL missing'); }
+    if (!nabdUrl) {
+      console.error('❌ NABD_API_URL is missing!');
+      throw new HttpError(500, 'Configuration error: Server URL is not set.');
+    }
 
     const response = await axios.post(
       `${nabdUrl}/run`,
