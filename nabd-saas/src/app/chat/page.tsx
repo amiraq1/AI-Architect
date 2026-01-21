@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect, FormEvent } from 'react';
 import Link from 'next/link';
 import ChatInput from './ChatInput';
+import MessageContent from '@/components/MessageContent';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // CONSTANTS & TYPES
@@ -308,7 +309,7 @@ export default function ChatPage() {
                                         <span className="text-xs truncate max-w-[150px]">{msg.attachment.name}</span>
                                     </div>
                                 )}
-                                <div className="whitespace-pre-wrap">{msg.content}</div>
+                                <MessageContent content={msg.content} />
                                 {msg.plan && msg.plan.length > 0 && (
                                     <div className="mt-2 pt-2 border-t border-white/10 flex flex-wrap gap-1">
                                         {msg.plan.map((step, i) => (
