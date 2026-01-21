@@ -1,6 +1,7 @@
-import { sendChatMessage } from 'wasp/client/operations'; // استدعاء الأكشن الذي أنشأناه
-import ChatInput from '../components/ChatInput'; // المكون الذي عدلناه سابقاً
-import { useState } from 'react';
+import { useQuery } from 'wasp/client/operations';
+import { getChatHistory, sendChatMessage } from 'wasp/client/operations';
+import ChatInput from '../components/ChatInput';
+import { useState, useEffect, useRef } from 'react';
 
 // دالة مساعدة لتحويل الملف إلى Base64
 const convertFileToBase64 = (file: File): Promise<string> => {
@@ -13,14 +14,29 @@ const convertFileToBase64 = (file: File): Promise<string> => {
 };
 
 export default function ChatPage() {
+    // جلب الرسائل من السيرفر
+    const { data: history, isLoading: isHistoryLoading } = useQuery(getChatHistory);
+
+    // State محلي لإدارة الرسائل وعرضها فوراً
     const [messages, setMessages] = useState<any[]>([]);
-    const [isLoading, setIsLoading] = useState(false);
+    const messagesEndRef = useRef<HTMLDivElement>(null);
+
+    // عند تحميل البيانات من السيرفر، نحدث الـ State
+    useEffect(() => {
+        if (history && Array.isArray(history)) {
+            setMessages(history);
+        }
+    }, [history]);
+
+    // التمرير التلقائي لأسفل عند تحديث الرسائل
+    useEffect(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, [messages]);
 
     const handleSendMessage = async (text: string, file: File | null) => {
-        // تحديث الواجهة فوراً برسالة المستخدم
-        const newUserMsg = { role: 'user', content: text, hasAttachment: !!file };
-        setMessages(prev => [...prev, newUserMsg]);
-        setIsLoading(true);
+        // تحديث تفاؤلي (Optimistic Update) - إظهار الرسالة قبل وصول الرد
+        const tempUserMsg = { role: 'user', content: text, hasImage: !!file };
+        setMessages(prev => [...prev, tempUserMsg]);
 
         try {
             let attachmentData = null;
@@ -33,41 +49,60 @@ export default function ChatPage() {
                 };
             }
 
-            // إرسال الطلب للسيرفر
             const result = await sendChatMessage({
                 message: text,
-                attachment: attachmentData,
-                history: messages.map(m => ({
-                    role: m.role,
-                    content: m.content
-                    // ملاحظة: لا نرسل صور الـ history القديمة لتوفير التكلفة (اختياري)
-                }))
+                attachment: attachmentData
             });
 
-            // إضافة رد "نبض"
+            // إضافة رد الـ AI
             setMessages(prev => [...prev, { role: 'assistant', content: result.response }]);
-
         } catch (err) {
-            alert("عذراً، حدث خطأ في الاتصال");
-        } finally {
-            setIsLoading(false);
+            console.error(err);
+            alert("عذراً، حدث خطأ أثناء الاتصال");
         }
     };
 
+    if (isHistoryLoading) {
+        return (
+            <div className="flex justify-center items-center h-full">
+                <div className="text-gray-500 animate-pulse">جاري تحميل ذاكرة نبض...</div>
+            </div>
+        );
+    }
+
     return (
-        <div className="flex flex-col h-full">
-            {/* منطقة عرض الرسائل */}
+        <div className="flex flex-col h-full bg-slate-50">
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                {messages.length === 0 && (
+                    <div className="flex flex-col items-center justify-center h-full text-gray-400 opacity-50">
+                        <span className="text-4xl mb-2">✨</span>
+                        <p>ابدأ محادثة جديدة مع نبض</p>
+                    </div>
+                )}
+
                 {messages.map((msg, idx) => (
-                    <div key={idx} className={`p-3 rounded-lg max-w-[80%] ${msg.role === 'user' ? 'bg-primary-100 mr-auto' : 'bg-white ml-auto'}`}>
-                        {msg.hasAttachment && <div className="text-xs text-gray-500 mb-1">[مرفق صورة]</div>}
-                        {msg.content}
+                    <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-start' : 'justify-end'}`}>
+                        <div className={`
+                 p-3 rounded-2xl max-w-[85%] md:max-w-[75%] shadow-sm relative
+                 ${msg.role === 'user'
+                                ? 'bg-blue-600 text-white rounded-br-none'
+                                : 'bg-white text-gray-800 border border-gray-100 rounded-bl-none'}
+             `}>
+                            {msg.hasImage && (
+                                <div className="text-xs mb-2 flex items-center gap-1 opacity-80 bg-black/10 p-1 rounded w-fit">
+                                    <span>📷</span>
+                                    <span>صورة مرفقة</span>
+                                </div>
+                            )}
+                            <div className="whitespace-pre-wrap leading-relaxed text-sm md:text-base" dir="auto">
+                                {msg.content}
+                            </div>
+                        </div>
                     </div>
                 ))}
+                <div ref={messagesEndRef} />
             </div>
-
-            {/* صندوق الإدخال الجديد */}
-            <ChatInput onSubmit={handleSendMessage} isLoading={isLoading} />
+            <ChatInput onSubmit={handleSendMessage} />
         </div>
     );
 }

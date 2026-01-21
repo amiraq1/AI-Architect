@@ -1,13 +1,52 @@
 import axios from 'axios';
 import { HttpError } from 'wasp/server';
 import type { AskNabd } from 'wasp/server/operations';
-import type { Message } from 'wasp/entities';
+import type { Message, Chat } from 'wasp/entities';
 import OpenAI from 'openai';
 
 // إعداد عميل OpenAI
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// HELPERS
+// ═══════════════════════════════════════════════════════════════════════════════
+
+async function getOrCreateChat(context: any, userId: number): Promise<Chat> {
+  // البحث عن آخر محادثة
+  const existingChat = await context.entities.Chat.findFirst({
+    where: { userId },
+    orderBy: { updatedAt: 'desc' }
+  });
+
+  if (existingChat) {
+    return existingChat;
+  }
+
+  // إنشاء محادثة جديدة إذا لم توجد
+  return context.entities.Chat.create({
+    data: {
+      userId
+    }
+  });
+}
+
+// دالة مساعدة للبحث (يمكنك ربطها بـ Google/Bing API لاحقاً)
+async function performWebSearch(query: string) {
+  console.log(`Searching web for: ${query}`);
+
+  // مثال: لو كنا نستخدم Tavily API (ممتازة للـ Agents)
+  // const response = await fetch("https://api.tavily.com/search", { ... })
+
+  // لمحاكاة الاستجابة الآن:
+  return JSON.stringify({
+    results: [
+      { title: "سعر صرف الدولار في العراق اليوم", snippet: "سعر الصرف في الأسواق المحلية يبلغ 150,000 دينار لكل 100 دولار..." },
+      { title: "أحدث تقنيات الويب 2026", snippet: "تقنيات الذكاء الاصطناعي التوليدي تسيطر على تطوير الويب..." }
+    ]
+  });
+}
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // TYPES
@@ -38,6 +77,9 @@ export const askNabd: AskNabd<NabdArgs, string> = async (args, context) => {
     throw new HttpError(401, 'يجب عليك تسجيل الدخول أولاً');
   }
 
+  // الحصول على المحادثة أو إنشاؤها
+  const chat = await getOrCreateChat(context, context.user.id);
+
   // 2. التحقق من الاشتراك وميزات الـ Premium
   const isSmartModel = args.modelName === 'llama-3.3-70b-versatile' || args.modelName === 'smart';
   const isCoderMode = args.agentMode === 'coder';
@@ -49,12 +91,12 @@ export const askNabd: AskNabd<NabdArgs, string> = async (args, context) => {
     throw new HttpError(403, "⚠️ هذه الميزة متاحة فقط للمشتركين. يرجى الترقية للمتابعة.");
   }
 
-  // 3. احفظ سؤال المستخدم فوراً
+  // 3. حفظ سؤال المستخدم فوراً
   await context.entities.Message.create({
     data: {
       content: args.query,
       role: 'user',
-      userId: context.user.id
+      chatId: chat.id
     }
   });
 
@@ -100,7 +142,7 @@ export const askNabd: AskNabd<NabdArgs, string> = async (args, context) => {
       data: {
         content: aiAnswer,
         role: 'assistant',
-        userId: context.user.id
+        chatId: chat.id
       }
     });
 
@@ -117,99 +159,161 @@ export const askNabd: AskNabd<NabdArgs, string> = async (args, context) => {
 // SEND CHAT MESSAGE (OpenAI GPT-4o with Vision)
 // ═══════════════════════════════════════════════════════════════════════════════
 
+// تعريف نوع المدخلات
 type ChatInput = {
   message: string;
-  attachment?: {
-    name: string;
-    type: string;
-    content: string; // Base64 string ex: "data:image/png;base64,..."
-  } | null;
-  history?: any[]; // سجل المحادثة السابق إذا كنت ترسله
+  attachment?: { content: string; type: string } | null;
+  chatId?: number; // اختياري لو أردنا التحديد
 };
+
+// تعريف الأدوات المتاحة للنموذج
+const tools = [
+  {
+    type: "function" as const, // استخدام 'as const' لتثبيت النوع لـ OpenAI TS
+    function: {
+      name: "search_web",
+      description: "استخدم هذه الأداة للبحث في الإنترنت عن معلومات حديثة، أحداث جارية، أسعار، أو معلومات ليست في معرفتك.",
+      parameters: {
+        type: "object",
+        properties: {
+          query: {
+            type: "string",
+            description: "جملة البحث، مثلاً 'سعر الدولار اليوم في بغداد'",
+          },
+        },
+        required: ["query"],
+      },
+    },
+  },
+];
 
 export const sendChatMessage = async (args: ChatInput, context: any) => {
-  if (!context.user) {
-    throw new HttpError(401, 'يجب عليك تسجيل الدخول أولاً');
+  if (!context.user) { throw new HttpError(401); }
+
+  // 1. العثور على المحادثة أو إنشاء واحدة جديدة
+  let chat = await context.entities.Chat.findFirst({
+    where: { userId: context.user.id },
+    orderBy: { updatedAt: 'desc' }
+  });
+
+  if (!chat) {
+    chat = await context.entities.Chat.create({
+      data: { userId: context.user.id }
+    });
   }
 
-  const { message, attachment, history = [] } = args;
+  // 2. حفظ رسالة المستخدم في قاعدة البيانات
+  await context.entities.Message.create({
+    data: {
+      chatId: chat.id,
+      role: 'user',
+      content: args.message || (args.attachment ? "تحليل صورة" : ""),
+      hasImage: !!args.attachment
+    }
+  });
 
-  // 1. إعداد رسالة النظام (الشخصية)
-  const systemMessage = {
-    role: "system",
-    content: `أنت "نبض"، مساعد ذكي متطور. 
-    - لغتك الأساسية هي العربية.
-    - إذا أرسل المستخدم صورة، قم بتحليلها بدقة واستخرج أي نصوص أو تفاصيل مهمة.
-    - كن مفيداً ومختصراً.`
-  };
+  // 3. جلب التاريخ السابق (Context)
+  // نأخذ آخر 10 رسائل فقط لتوفير التكلفة وتسريع الاستجابة
+  const previousMessages = await context.entities.Message.findMany({
+    where: { chatId: chat.id },
+    orderBy: { createdAt: 'desc' },
+    take: 10,
+  });
 
-  // 2. تجهيز رسالة المستخدم الحالية
-  let userMessageContent: any[] = [];
+  // إعادة ترتيبها زمنياً للصعود (من القديم للجديد) لتفهمها OpenAI
+  const historyContext = previousMessages.reverse().map((msg: any) => ({
+    role: msg.role,
+    content: msg.content
+  }));
 
-  // أ) إضافة النص
-  if (message) {
-    userMessageContent.push({ type: "text", text: message });
-  } else if (attachment) {
-    // إذا أرسل صورة فقط بدون نص، نفترض أنه يريد وصفاً لها
-    userMessageContent.push({ type: "text", text: "ماذا يوجد في هذه الصورة؟" });
-  }
-
-  // ب) إضافة الصورة (إذا وجدت)
-  if (attachment && attachment.type.startsWith('image/')) {
-    userMessageContent.push({
+  // 4. تجهيز الرسالة الحالية (مع الصورة لو وجدت) كما فعلنا سابقاً
+  let currentMessageContent: any[] = [];
+  if (args.message) currentMessageContent.push({ type: "text", text: args.message });
+  if (args.attachment) {
+    currentMessageContent.push({
       type: "image_url",
-      image_url: {
-        url: attachment.content, // الـ Base64 الذي أرسلناه من الـ Client
-        detail: "high" // دقة عالية لرؤية التفاصيل الصغيرة
-      }
+      image_url: { url: args.attachment.content }
     });
   }
 
-  // 3. تجميع سجل المحادثة (History) + الرسالة الجديدة
-  // ملاحظة: يجب تنسيق الـ history ليطابق شكل OpenAI (user/assistant)
-  const messagesPayload = [
-    systemMessage,
-    ...history,
-    { role: "user", content: userMessageContent }
-  ];
+  // 1. استدعاء OpenAI (المرحلة الأولى: التفكير)
+  const runner = await openai.chat.completions.create({
+    model: "gpt-4o",
+    messages: [
+      { role: "system", content: "أنت نبض، وكيل ذكي. لديك القدرة على البحث في الإنترنت عند الحاجة." },
+      ...historyContext,
+      { role: "user", content: currentMessageContent }
+    ],
+    tools: tools, // نزوده بالأدوات
+    tool_choice: "auto", // نتركه يقرر متى يستخدمها
+  });
 
-  try {
-    // 4. استدعاء النموذج
-    const response = await openai.chat.completions.create({
-      model: "gpt-4o", // أفضل نموذج للتعامل مع الصور حالياً
-      messages: messagesPayload as any,
-      max_tokens: 1000,
-    });
+  const responseMessage = runner.choices[0].message;
 
-    const reply = response.choices[0].message.content;
+  // 2. التحقق: هل يريد النموذج استخدام أداة؟
+  if (responseMessage.tool_calls) {
 
-    // 5. حفظ الرسائل في قاعدة البيانات
-    // حفظ رسالة المستخدم
-    await context.entities.Message.create({
-      data: {
-        content: message || "📷 صورة",
-        role: 'user',
-        userId: context.user.id
+    // حفظ استدعاء الأداة في سياق الرسائل (مهم جداً للنموذج)
+    const messagesChain = [
+      { role: "system", content: "أنت نبض، وكيل ذكي. لديك القدرة على البحث في الإنترنت عند الحاجة." },
+      ...historyContext,
+      { role: "user", content: currentMessageContent },
+      responseMessage // نضيف "نية" النموذج لاستدعاء الأداة
+    ] as any[];
+
+    // تنفيذ الأدوات المطلوبة
+    for (const toolCall of responseMessage.tool_calls) {
+      if (toolCall.function.name === "search_web") {
+
+        // استخراج وسيطات البحث (Query)
+        const funcArgs = JSON.parse(toolCall.function.arguments);
+
+        // تنفيذ البحث الفعلي
+        const searchResult = await performWebSearch(funcArgs.query);
+
+        // إضافة نتيجة البحث إلى سلسلة الرسائل
+        messagesChain.push({
+          tool_call_id: toolCall.id,
+          role: "tool",
+          name: "search_web",
+          content: searchResult,
+        });
       }
+    }
+
+    // 3. استدعاء OpenAI مرة ثانية (المرحلة الثانية: الإجابة النهائية بناءً على البحث)
+    const finalResponse = await openai.chat.completions.create({
+      model: "gpt-4o",
+      messages: messagesChain,
     });
 
-    // حفظ رد المساعد
+    const finalAiReply = finalResponse.choices[0].message.content || "";
+
+    // حفظ الرد النهائي في الـ DB
     await context.entities.Message.create({
       data: {
-        content: reply || '',
+        chatId: chat.id,
         role: 'assistant',
-        userId: context.user.id
+        content: finalAiReply,
       }
     });
 
-    return {
-      response: reply,
-      hasAttachment: !!attachment,
-      attachmentName: attachment?.name
-    };
+    return { response: finalAiReply };
 
-  } catch (error: any) {
-    console.error("OpenAI Error:", error);
-    throw new HttpError(500, "حدث خطأ أثناء معالجة طلبك.");
+  } else {
+    // إذا لم يحتاج لبحث، نرد مباشرة
+    const aiReply = responseMessage.content || "";
+
+    // حفظ الرد
+    await context.entities.Message.create({
+      data: {
+        chatId: chat.id,
+        role: 'assistant',
+        content: aiReply,
+      }
+    });
+
+    return { response: aiReply };
   }
-};
+}
+

@@ -9,18 +9,28 @@
 // ─────────────────────────────────────────────────────────────────────────────
 
 entity Message {=psl
-  id          Int      @id @default(autoincrement())
-  content     String
-  role        String   // "user" أو "assistant"
-  createdAt   DateTime @default(now())
-  user        User     @relation(fields: [userId], references: [id])
-  userId      Int
+  id          Int       @id @default(autoincrement())
+  chat        Chat      @relation(fields: [chatId], references: [id])
+  chatId      Int
+  role        String    // "user" أو "assistant"
+  content     String    // نص الرسالة
+  hasImage    Boolean   @default(false) // هل تحتوي على صورة؟
+  createdAt   DateTime  @default(now())
 psl=}
 
-// Update your existing User entity to include messages relation:
+entity Chat {=psl
+  id          Int       @id @default(autoincrement())
+  user        User      @relation(fields: [userId], references: [id])
+  userId      Int
+  messages    Message[]
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+psl=}
+
+// Update your existing User entity to include chats relation:
 entity User {=psl
   // ... existing fields ...
-  messages    Message[]
+  chats       Chat[]
 psl=}
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -34,12 +44,12 @@ action askNabd {
 
 action sendChatMessage {
   fn: import { sendChatMessage } from "@src/server/actions.js",
-  entities: [User, Message]
+  entities: [Chat, Message]
 }
 
 query getChatHistory {
   fn: import { getChatHistory } from "@src/server/queries.js",
-  entities: [User, Message]
+  entities: [Chat, Message]
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
