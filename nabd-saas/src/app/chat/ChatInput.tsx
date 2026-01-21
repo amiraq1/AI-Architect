@@ -67,7 +67,7 @@ export default function ChatInput({ onSubmit, isLoading }: ChatInputProps) {
 
                 <input
                     type="text"
-                    className="block w-full px-12 py-3.5 bg-slate-900 border border-slate-700/50 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 transition-all text-sm sm:text-base text-right font-sans shadow-sm disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="block w-full px-12 py-3.5 bg-slate-900 border border-slate-700/50 rounded-2xl text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 transition-all text-base text-right font-sans shadow-sm disabled:opacity-50 disabled:cursor-not-allowed touch-action-manipulation"
                     placeholder="اكتب رسالتك هنا..."
                     dir="rtl"
                     value={message}
@@ -75,31 +75,28 @@ export default function ChatInput({ onSubmit, isLoading }: ChatInputProps) {
                     disabled={isLoading}
                 />
 
-                {/* Attachment Button (Right) */}
                 <button
                     type="button"
                     onClick={() => fileInputRef.current?.click()}
                     disabled={isLoading}
-                    className="absolute inset-y-0 right-3 flex items-center px-1 text-slate-400 hover:text-cyan-400 transition-colors disabled:opacity-50"
+                    className="absolute inset-y-0 right-1 flex items-center px-3 text-slate-400 hover:text-cyan-400 transition-colors disabled:opacity-50"
                     title="إرفاق ملف"
                 >
-                    <HiPaperClip className="h-5 w-5" />
+                    <HiPaperClip className="h-6 w-6" />
                 </button>
 
-                {/* Send Button (Left) */}
                 <button
                     type="submit"
                     disabled={isLoading || (!message.trim() && !selectedFile)}
-                    className="absolute inset-y-0 left-3 flex items-center px-1 text-cyan-500 hover:text-cyan-400 disabled:text-slate-600 transition-colors disabled:cursor-not-allowed"
+                    className="absolute inset-y-0 left-1 flex items-center px-3 text-cyan-500 hover:text-cyan-400 disabled:text-slate-600 transition-colors disabled:cursor-not-allowed"
                 >
                     {isLoading ? (
-                        <svg className="w-5 h-5 animate-spin text-cyan-500" fill="none" viewBox="0 0 24 24">
+                        <svg className="w-6 h-6 animate-spin text-cyan-500" fill="none" viewBox="0 0 24 24">
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                         </svg>
                     ) : (
-                        // Rotating icon for RTL (pointing left)
-                        <HiPaperAirplane className="h-5 w-5 rotate-180" />
+                        <HiPaperAirplane className="h-6 w-6 rotate-180 rtl:-rotate-90" />
                     )}
                 </button>
             </form>

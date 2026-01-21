@@ -1,0 +1,68 @@
+app OpenSaas {
+  wasp: {
+    version: "^0.13.0"
+  },
+  title: "OpenSaas Chat",
+  db: {
+    system: PostgreSQL
+  },
+  auth: {
+    userEntity: User,
+    methods: {
+      usernameAndPassword: {}
+    },
+    onAuthFailedRedirectTo: "/login"
+  }
+}
+
+route RootRoute { path: "/", to: ChatPage }
+page ChatPage {
+  component: import ChatPage from "@client/ChatPage"
+}
+
+route LoginRoute { path: "/login", to: LoginPage }
+page LoginPage {
+  component: import Login from "@client/LoginPage" // سنحتاج لإنشاء هذا أو استخدام صفحة وهمية
+}
+
+query getChatHistory {
+  fn: import { getChatHistory } from "@server/queries",
+  entities: [User, Chat, Message]
+}
+
+action sendChatMessage {
+  fn: import { sendChatMessage } from "@server/actions",
+  entities: [User, Chat, Message]
+}
+
+action askNabd {
+  fn: import { askNabd } from "@server/actions",
+  entities: [User, Chat, Message]
+}
+
+entity User {=psl
+  id Int @id @default(autoincrement())
+  username String @unique
+  password String
+  chats Chat[]
+  subscriptionStatus String?
+psl=}
+
+entity Chat {=psl
+  id Int @id @default(autoincrement())
+  user User @relation(fields: [userId], references: [id])
+  userId Int
+  messages Message[]
+  updatedAt DateTime @updatedAt
+  createdAt DateTime @default(now())
+psl=}
+
+entity Message {=psl
+  id Int @id @default(autoincrement())
+  chat Chat @relation(fields: [chatId], references: [id])
+  chatId Int
+  role String
+  content String
+  hasImage Boolean @default(false)
+  createdAt DateTime @default(now())
+psl=}

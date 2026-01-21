@@ -76,7 +76,7 @@ export default function ChatInput({ onSubmit, isLoading }: ChatInputProps) {
                 {/* Text Input */}
                 <input
                     type="text"
-                    className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-right disabled:bg-gray-50 disabled:cursor-not-allowed"
+                    className="flex-1 px-4 py-3 border border-gray-300 rounded-xl focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent text-right text-base font-sans shadow-sm disabled:bg-gray-50 disabled:cursor-not-allowed touch-action-manipulation"
                     placeholder="اكتب رسالتك هنا..."
                     dir="rtl"
                     value={message}
