@@ -4,6 +4,7 @@ import { useState, useRef, useEffect, FormEvent } from 'react';
 import Link from 'next/link';
 import ChatInput from './ChatInput';
 import MessageContent from '@/components/MessageContent';
+import AgentLoader from '@/components/AgentLoader';
 
 // ═══════════════════════════════════════════════════════════════════════════════
 // CONSTANTS & TYPES
@@ -57,9 +58,14 @@ export default function ChatPage() {
 
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
-    useEffect(() => {
+    const scrollToBottom = () => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [messages]);
+    };
+
+    // التمرير للأسفل عند تغيير الرسائل أو حالة التحميل
+    useEffect(() => {
+        scrollToBottom();
+    }, [messages, isLoading]);
 
     const handleSend = async (messageText: string, file: File | null) => {
         if (!messageText.trim() && !file) return;
@@ -324,12 +330,8 @@ export default function ChatPage() {
                     ))}
 
                     {isLoading && (
-                        <div className="flex justify-end w-full">
-                            <div className="bg-slate-800 rounded-2xl rounded-tl-none px-4 py-3 flex gap-1">
-                                <div className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce [animation-delay:-0.3s]" />
-                                <div className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce [animation-delay:-0.15s]" />
-                                <div className="w-1.5 h-1.5 bg-cyan-400 rounded-full animate-bounce" />
-                            </div>
+                        <div className="flex justify-start animate-in fade-in slide-in-from-bottom-2 duration-300">
+                            <AgentLoader />
                         </div>
                     )}
 
