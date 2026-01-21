@@ -32,6 +32,11 @@ action askNabd {
   entities: [User, Message]
 }
 
+action sendChatMessage {
+  fn: import { sendChatMessage } from "@src/server/actions.js",
+  entities: [User, Message]
+}
+
 query getChatHistory {
   fn: import { getChatHistory } from "@src/server/queries.js",
   entities: [User, Message]
