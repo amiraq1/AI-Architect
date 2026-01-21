@@ -1,4 +1,5 @@
 import axios from 'axios';
+import puppeteer from 'puppeteer';
 import { HttpError } from 'wasp/server';
 import type { AskNabd } from 'wasp/server/operations';
 import type { Message, Chat } from 'wasp/entities';
@@ -46,6 +47,54 @@ async function performWebSearch(query: string) {
       { title: "أحدث تقنيات الويب 2026", snippet: "تقنيات الذكاء الاصطناعي التوليدي تسيطر على تطوير الويب..." }
     ]
   });
+}
+
+// دالة التصفح الفعلي
+async function browseWebsite(url: string) {
+  console.log(`Browsing: ${url}`);
+
+  // تشغيل المتصفح
+  const browser = await puppeteer.launch({
+    headless: true, // "بدون رأس" أي بدون واجهة رسومية ظاهرة
+    args: ['--no-sandbox', '--disable-setuid-sandbox'] // إعدادات أمان ضرورية للسيرفرات
+  });
+
+  try {
+    const page = await browser.newPage();
+
+    // تعيين حجم شاشة افتراضي (لضمان ظهور الموقع بشكل جيد في لقطة الشاشة)
+    await page.setViewport({ width: 1280, height: 800 });
+
+    // الذهاب للرابط (ننتظر حتى يتوقف الاتصال الشبكي تقريباً لضمان التحميل)
+    await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
+
+    // 1. استخراج النصوص (للقراءة السريعة)
+    // نأخذ أول 3000 حرف فقط لتجنب تجاوز حدود الـ Token
+    const textContent = await page.evaluate(() => {
+      return document.body.innerText.substring(0, 3000)
+        .replace(/\s+/g, ' ') // إزالة المسافات الزائدة
+        .trim();
+    });
+
+    // 2. أخذ لقطة شاشة (للرؤية)
+    const screenshotBuffer = await page.screenshot({
+      encoding: 'base64',
+      type: 'jpeg',
+      quality: 70 // جودة متوسطة لتقليل الحجم
+    });
+
+    return JSON.stringify({
+      success: true,
+      text: textContent,
+      screenshot: `data:image/jpeg;base64,${screenshotBuffer}`
+    });
+
+  } catch (error) {
+    console.error("Browser Error:", error);
+    return JSON.stringify({ success: false, error: "فشل في فتح الموقع" });
+  } finally {
+    await browser.close(); // إغلاق المتصفح دائماً لتوفير الذاكرة
+  }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════════
@@ -185,6 +234,23 @@ const tools = [
       },
     },
   },
+  {
+    type: "function" as const,
+    function: {
+      name: "visit_page",
+      description: "استخدم هذه الأداة لزيارة رابط URL محدد وقراءة محتواه ورؤية تصميمه.",
+      parameters: {
+        type: "object",
+        properties: {
+          url: {
+            type: "string",
+            description: "الرابط المراد زيارته (يجب أن يبدأ بـ http/https)",
+          },
+        },
+        required: ["url"],
+      },
+    },
+  },
 ];
 
 export const sendChatMessage = async (args: ChatInput, context: any) => {
@@ -240,7 +306,7 @@ export const sendChatMessage = async (args: ChatInput, context: any) => {
   const runner = await openai.chat.completions.create({
     model: "gpt-4o",
     messages: [
-      { role: "system", content: "أنت نبض، وكيل ذكي. لديك القدرة على البحث في الإنترنت عند الحاجة." },
+      { role: "system", content: "أنت نبض، وكيل ذكي. يمكنك البحث في الويب وزيارة المواقع لتحليل محتواها بصرياً ونصياً." },
       ...historyContext,
       { role: "user", content: currentMessageContent }
     ],
@@ -255,7 +321,7 @@ export const sendChatMessage = async (args: ChatInput, context: any) => {
 
     // حفظ استدعاء الأداة في سياق الرسائل (مهم جداً للنموذج)
     const messagesChain = [
-      { role: "system", content: "أنت نبض، وكيل ذكي. لديك القدرة على البحث في الإنترنت عند الحاجة." },
+      { role: "system", content: "أنت نبض، وكيل ذكي. يمكنك البحث في الويب وزيارة المواقع لتحليل محتواها بصرياً ونصياً." },
       ...historyContext,
       { role: "user", content: currentMessageContent },
       responseMessage // نضيف "نية" النموذج لاستدعاء الأداة
@@ -278,6 +344,44 @@ export const sendChatMessage = async (args: ChatInput, context: any) => {
           name: "search_web",
           content: searchResult,
         });
+      } else if (toolCall.function.name === "visit_page") {
+        const funcArgs = JSON.parse(toolCall.function.arguments);
+        const result = JSON.parse(await browseWebsite(funcArgs.url));
+
+        if (result.success) {
+          // خدعة ذكية:
+          // بما أن نتيجة الأداة (Tool Output) تقبل نصوصاً فقط،
+          // سنضيف نتيجة النص كـ Tool Message،
+          // ونضيف لقطة الشاشة كرسالة "User" إضافية وهمية لتراها عين النموذج (Vision).
+
+          messagesChain.push({
+            tool_call_id: toolCall.id,
+            role: "tool",
+            name: "visit_page",
+            content: JSON.stringify({ text_summary: result.text }), // نرسل النص كمرجع
+          });
+
+          // نرسل الصورة كرسالة مستخدم جديدة لكي يحللها النموذج
+          messagesChain.push({
+            role: "user",
+            content: [
+              { type: "text", text: "لقد قمتُ بزيارة الموقع. هذه لقطة شاشة لما رأيته، بالإضافة للنص الذي استخرجته:" },
+              {
+                type: "image_url",
+                image_url: { url: result.screenshot } // الصورة التي التقطها Puppeteer
+              }
+            ]
+          } as any);
+
+        } else {
+          // في حال الفشل
+          messagesChain.push({
+            tool_call_id: toolCall.id,
+            role: "tool",
+            name: "visit_page",
+            content: JSON.stringify({ error: result.error }),
+          });
+        }
       }
     }
 
