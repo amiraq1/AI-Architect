@@ -1,12 +1,14 @@
+require('dotenv').config();
 const OpenAI = require('openai');
 const puppeteer = require('puppeteer');
 
-// محاكاة البيئة
-process.env.OPENAI_API_KEY = "YOUR_OPENAI_API_KEY_HERE"; // يجب عليك استبدال هذا بالمفتاح الحقيقي عند التشغيل
-
-if (!process.env.OPENAI_API_KEY || process.env.OPENAI_API_KEY === "YOUR_OPENAI_API_KEY_HERE") {
-    console.error("الرجاء وضع مفتاح OPENAI_API_KEY في ملف البيئة أو في الكود للاختبار.");
-    process.exit(1);
+// التحقق من المفتاح
+if (!process.env.OPENAI_API_KEY) {
+    console.warn("⚠️  تحذير: لم يتم العثور على OPENAI_API_KEY في ملف .env!");
+    console.warn("   يرجى إضافته لتتمكن من اختبار نموذج GPT-4o وميزات الـ Vision.");
+    console.warn("   حالياً سيحاول السكربت العمل ولكن قد يفشل عند الاتصال بـ OpenAI.\n");
+} else {
+    console.log("✅ تم العثور على مفتاح OpenAI.");
 }
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
