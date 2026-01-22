@@ -36,8 +36,8 @@ WORKDIR /app
 # ───────────────────────────────────────────────────────────────────────────────
 FROM base AS deps
 
-# Copy package files
-COPY package*.json ./
+# Copy package files from nabd-saas directory
+COPY nabd-saas/package*.json ./
 
 # Install dependencies
 RUN npm ci --only=production
@@ -50,11 +50,11 @@ FROM base AS builder
 WORKDIR /app
 
 # Copy package files and install all dependencies (including dev)
-COPY package*.json ./
+COPY nabd-saas/package*.json ./
 RUN npm ci
 
-# Copy source code
-COPY . .
+# Copy source code from nabd-saas directory
+COPY nabd-saas/ .
 
 # Build the application
 RUN npm run build
