@@ -40,12 +40,26 @@ action askNabd {
   entities: [User, Chat, Message]
 }
 
+// Admin Route
+route AdminRoute { path: "/admin", to: AdminPage }
+page AdminPage {
+  component: import AdminPage from "@client/admin/AdminPage",
+  authRequired: true
+}
+
+// Admin Query
+query getAdminStats {
+  fn: import { getAdminStats } from "@server/queries",
+  entities: [User, Chat, Message]
+}
+
 entity User {=psl
   id Int @id @default(autoincrement())
   username String @unique
   password String
   chats Chat[]
   subscriptionStatus String?
+  isAdmin Boolean @default(false)
 psl=}
 
 entity Chat {=psl
@@ -66,3 +80,4 @@ entity Message {=psl
   hasImage Boolean @default(false)
   createdAt DateTime @default(now())
 psl=}
+
