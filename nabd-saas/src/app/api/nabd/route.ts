@@ -34,10 +34,19 @@ function getMockResponse(query: string, agentMode: string): string {
     return modeResponses[Math.floor(Math.random() * modeResponses.length)];
 }
 
+import { getPromptForAgentMode } from '@/lib/prompts';
+
+// ... (imports remain)
+
+// ... (mock function remains)
+
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
         const { query, agentMode = 'general', modelName = 'llama-3.1-8b-instant' } = body;
+
+        // Get the advanced system prompt based on the agent mode
+        const systemPrompt = getPromptForAgentMode(agentMode);
 
         if (!query?.trim()) {
             return NextResponse.json(
@@ -57,6 +66,7 @@ export async function POST(request: NextRequest) {
                     },
                     body: JSON.stringify({
                         prompt: query,
+                        system_prompt: systemPrompt, // Send the advanced prompt
                         agent_mode: agentMode,
                         model_name: modelName,
                         thread_id: `nextjs_${Date.now()}`,
