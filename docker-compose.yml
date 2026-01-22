@@ -5,88 +5,43 @@
 version: '3.8'
 
 services:
-  # ─────────────────────────────────────────────────────────────────────────────
-  # PostgreSQL Database
-  # ─────────────────────────────────────────────────────────────────────────────
+  # 1. تطبيق نبض
+  nabdh-app:
+    # Use the locally built image name (or GHCR image if preferred later)
+    image: nabdh-v2-image
+    # If using local build context instead of pre-built image:
+    # build: .
+    container_name: nabdh-v2-container
+    restart: always
+    env_file: .env
+    ports:
+      - "3000:3000" # المنفذ الذي سيعمل عليه التطبيق
+    depends_on:
+      - db
+    volumes:
+      - app_uploads:/app/uploads
+
+  # 2. قاعدة البيانات
   db:
     image: postgres:15-alpine
     container_name: nabd-db
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: ${DB_USER:-nabd}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-nabd_secret_2026}
-      POSTGRES_DB: ${DB_NAME:-nabdh_db}
+    restart: always
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - db_data:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: ${DB_USER:-user}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-password}
+      POSTGRES_DB: ${DB_NAME:-nabdh_db}
     ports:
       - "5432:5432"
     healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U ${DB_USER:-nabd}" ]
+      test: [ "CMD-SHELL", "pg_isready -U ${DB_USER:-user}" ]
       interval: 10s
       timeout: 5s
       retries: 5
 
-  # ─────────────────────────────────────────────────────────────────────────────
-  # Nabd AI Application
-  # ─────────────────────────────────────────────────────────────────────────────
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: nabd-app
-    restart: unless-stopped
-    ports:
-      - "3000:3000"
-    environment:
-      - NODE_ENV=production
-      - DATABASE_URL=postgresql://${DB_USER:-nabd}:${DB_PASSWORD:-nabd_secret_2026}@db:5432/${DB_NAME:-nabdh_db}
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
-      - GROQ_API_KEY=${GROQ_API_KEY}
-      - JWT_SECRET=${JWT_SECRET}
-      - WASP_WEB_CLIENT_URL=${WASP_WEB_CLIENT_URL:-http://localhost:3000}
-      - WASP_SERVER_URL=${WASP_SERVER_URL:-http://localhost:3000/api}
-      - PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
-      - PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
-    depends_on:
-      db:
-        condition: service_healthy
-    volumes:
-      - app_uploads:/app/uploads
-    networks:
-      - nabd-network
-
-  # ─────────────────────────────────────────────────────────────────────────────
-  # Nginx Reverse Proxy (Optional - for production)
-  # ─────────────────────────────────────────────────────────────────────────────
-  nginx:
-    image: nginx:alpine
-    container_name: nabd-nginx
-    restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./nginx.conf:/etc/nginx/nginx.conf:ro
-      - ./ssl:/etc/nginx/ssl:ro
-    depends_on:
-      - app
-    networks:
-      - nabd-network
-    profiles:
-      - production
-
-# ─────────────────────────────────────────────────────────────────────────────
-# Volumes
-# ─────────────────────────────────────────────────────────────────────────────
 volumes:
-  postgres_data:
-    driver: local
+  db_data:
   app_uploads:
-    driver: local
 
-# ─────────────────────────────────────────────────────────────────────────────
-# Networks
-# ─────────────────────────────────────────────────────────────────────────────
-networks:
-  nabd-network:
-    driver: bridge
+
