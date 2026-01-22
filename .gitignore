@@ -46,3 +46,25 @@ data/
 
 .DS_Store
 Thumbs.db
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Node.js / Next.js
+# ═══════════════════════════════════════════════════════════════════════════════
+node_modules/
+.next/
+out/
+.nuxt/
+.output/
+
+# Build artifacts
+*.zip
+*.tar.gz
+*.tgz
+nabd-saas-build.zip
+
+# Next.js
+.vercel/
+.turbo/
+
+# Wasp
+.wasp/
