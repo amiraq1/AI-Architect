@@ -1,5 +1,13 @@
 import type { Metadata, Viewport } from "next";
+import { Cairo } from "next/font/google";
 import "./globals.css";
+
+const cairo = Cairo({
+  subsets: ["arabic", "latin"],
+  weight: ["300", "400", "500", "600", "700", "800"],
+  display: "swap",
+  variable: "--font-cairo",
+});
 
 export const viewport: Viewport = {
   width: 'device-width',
@@ -19,10 +27,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ar" dir="rtl">
-      <body className="antialiased bg-slate-950 text-slate-50 min-h-screen">
+    <html lang="ar" dir="rtl" className={cairo.variable}>
+      <body className={`${cairo.className} antialiased bg-slate-950 text-slate-50 min-h-screen`}>
         {children}
       </body>
     </html>
   );
 }
+
