@@ -1,104 +1,71 @@
 /**
  * Nabd AI API Route
- * Handles communication with Nabd AI backend
+ * Handles communication with Groq AI directly
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-
-const NABD_API_URL = process.env.NABD_API_URL || 'http://localhost:5000';
-const NABD_SECRET_KEY = process.env.NABD_SECRET_KEY || 'nabd-secret-2026-v1';
-const USE_MOCK = process.env.USE_MOCK_AI === 'true' || !process.env.NABD_API_URL;
-
-// Mock responses for development
-function getMockResponse(query: string, agentMode: string): string {
-    const responses: Record<string, string[]> = {
-        general: [
-            `أهلاً! أنا نبض، مساعدك الذكي. سؤالك عن "${query}" مثير للاهتمام!\n\nإليك ما أعرفه:\n- هذا موضوع مهم في عالمنا اليوم\n- يمكنني مساعدتك في فهمه بشكل أعمق\n- هل تريد المزيد من التفاصيل؟`,
-            `مرحباً! سؤال رائع عن "${query}".\n\n**النقاط الرئيسية:**\n1. هذا موضوع واسع ومتشعب\n2. له تطبيقات عملية كثيرة\n3. يمكنني شرحه بالتفصيل\n\nهل تريد أن أتعمق في جانب معين؟`,
-        ],
-        coder: [
-            `\`\`\`python\n# مثال على الكود المطلوب\ndef hello_world():\n    """دالة ترحيبية بسيطة"""\n    print("مرحباً بالعالم!")\n    return True\n\nif __name__ == "__main__":\n    hello_world()\n\`\`\`\n\n**شرح الكود:**\n- أنشأنا دالة بسيطة\n- تطبع رسالة ترحيبية\n- تعيد قيمة True`,
-            `إليك الحل البرمجي:\n\n\`\`\`javascript\n// تحليل البيانات\nconst analyzeData = (data) => {\n  return data\n    .filter(item => item.active)\n    .map(item => ({\n      ...item,\n      processed: true\n    }));\n};\n\`\`\`\n\nهذا الكود يقوم بـ:\n1. فلترة العناصر النشطة\n2. إضافة علامة المعالجة`,
-        ],
-        writer: [
-            `# ${query}\n\nفي عالم مليء بالتحديات والفرص، نجد أنفسنا أمام سؤال مهم...\n\n## المقدمة\nيعتبر هذا الموضوع من أهم المواضيع المعاصرة التي تؤثر على حياتنا اليومية.\n\n## التحليل\nعند النظر عن كثب، نكتشف أبعاداً متعددة لهذا الموضوع...`,
-            `**عنوان المقال:** ${query}\n\n---\n\n*بقلم: نبض AI*\n\nفي ضوء التطورات الأخيرة، يبرز هذا الموضوع كواحد من أهم القضايا التي تستحق الاهتمام والدراسة المعمقة...`,
-        ],
-        researcher: [
-            `## تحليل بحثي: ${query}\n\n### المصادر:\n1. دراسة 2024 - جامعة بغداد\n2. تقرير منظمة الأمم المتحدة\n3. بحث أكاديمي محكّم\n\n### النتائج الرئيسية:\n- النتيجة الأولى: ...\n- النتيجة الثانية: ...\n\n### التوصيات:\nبناءً على الأدلة المتاحة...`,
-            `# بحث علمي\n\n**الموضوع:** ${query}\n\n## الملخص التنفيذي\nيهدف هذا البحث إلى استكشاف الجوانب المختلفة للموضوع المطروح...\n\n## المنهجية\nتم استخدام منهج تحليلي وصفي...`,
-        ],
-    };
-
-    const modeResponses = responses[agentMode] || responses.general;
-    return modeResponses[Math.floor(Math.random() * modeResponses.length)];
-}
-
 import { getPromptForAgentMode } from '@/lib/prompts';
+import Groq from 'groq-sdk';
 
-// ... (imports remain)
+const GROQ_API_KEY = process.env.GROQ_API_KEY;
 
-// ... (mock function remains)
+// Initialize Groq client
+const groq = new Groq({
+    apiKey: GROQ_API_KEY || 'gsk_your_default_key_if_any', // Ensure you set this in .env
+});
 
 export async function POST(request: NextRequest) {
     try {
         const body = await request.json();
         const { query, agentMode = 'general', modelName = 'llama-3.1-8b-instant' } = body;
 
+        if (!query?.trim()) {
+            return NextResponse.json({ error: 'Query is required' }, { status: 400 });
+        }
+
+        if (!GROQ_API_KEY) {
+            console.error('GROQ_API_KEY is missing');
+            // Fail gracefully or use mock if needed, but here we report error
+            return NextResponse.json({
+                error: 'Server configuration error: API Key missing',
+                response: 'عذراً، هناك مشكلة في إعدادات الخادم (مفتاح API مفقود). يرجى الاتصال بالمسؤول أو التأكد من ملف .env.local.'
+            }, { status: 500 });
+        }
+
         // Get the advanced system prompt based on the agent mode
         const systemPrompt = getPromptForAgentMode(agentMode);
 
-        if (!query?.trim()) {
-            return NextResponse.json(
-                { error: 'Query is required' },
-                { status: 400 }
-            );
+        try {
+            console.log(`Sending request to Groq with mode: ${agentMode}...`);
+            const completion = await groq.chat.completions.create({
+                messages: [
+                    { role: 'system', content: systemPrompt },
+                    { role: 'user', content: query }
+                ],
+                model: 'llama-3.1-70b-versatile', // Use a powerful model
+                temperature: 0.7,
+                max_tokens: 2048,
+            });
+
+            const aiResponse = completion.choices[0]?.message?.content || 'عذراً، لم أتمكن من توليد رد.';
+
+            return NextResponse.json({
+                response: aiResponse,
+                model: 'llama-3.1-70b-versatile',
+                mode: agentMode,
+                is_mock: false,
+            });
+
+        } catch (groqError: any) {
+            console.error('Groq API Error:', groqError);
+            return NextResponse.json({
+                error: 'AI Provider Error',
+                response: `عذراً، حدث خطأ أثناء الاتصال بمزود الذكاء الاصطناعي: ${groqError.message}`
+            }, { status: 500 });
         }
-
-        // Try to connect to Nabd backend
-        if (!USE_MOCK) {
-            try {
-                const response = await fetch(`${NABD_API_URL}/run`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-NABD-SECRET': NABD_SECRET_KEY,
-                    },
-                    body: JSON.stringify({
-                        prompt: query,
-                        system_prompt: systemPrompt, // Send the advanced prompt
-                        agent_mode: agentMode,
-                        model_name: modelName,
-                        thread_id: `nextjs_${Date.now()}`,
-                    }),
-                });
-
-                if (response.ok) {
-                    const data = await response.json();
-                    return NextResponse.json(data);
-                }
-            } catch (backendError) {
-                console.warn('Nabd backend unavailable, using mock response:', backendError);
-            }
-        }
-
-        // Fallback to mock response
-        console.log('Using mock AI response for:', query);
-
-        // Simulate processing delay
-        await new Promise(resolve => setTimeout(resolve, 800 + Math.random() * 1200));
-
-        const mockResponse = getMockResponse(query, agentMode);
-
-        return NextResponse.json({
-            response: mockResponse,
-            model: modelName,
-            mode: agentMode,
-            is_mock: true,
-        });
 
     } catch (error) {
-        console.error('Nabd API Error:', error);
+        console.error('API Route Error:', error);
         return NextResponse.json(
             { error: 'Internal server error' },
             { status: 500 }
