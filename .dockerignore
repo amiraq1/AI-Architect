@@ -1,0 +1,57 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# Nabd AI Agent - Docker Ignore
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# Dependencies
+node_modules
+**/node_modules
+
+# Build outputs
+.next
+out
+dist
+build
+
+# Development
+.env
+.env.local
+.env.*.local
+
+# IDE
+.idea
+.vscode
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Testing
+coverage
+.nyc_output
+
+# Git
+.git
+.gitignore
+
+# Docker
+Dockerfile*
+docker-compose*
+.docker
+
+# Documentation
+*.md
+!README.md
+docs
+
+# Misc
+.cache
+.temp
+tmp
