@@ -22,7 +22,14 @@ page ChatPage {
 
 route LoginRoute { path: "/login", to: LoginPage }
 page LoginPage {
-  component: import Login from "@client/LoginPage" // سنحتاج لإنشاء هذا أو استخدام صفحة وهمية
+  component: import Login from "@client/LoginPage"
+}
+
+// Pricing Page (Public)
+route PricingRoute { path: "/pricing", to: PricingPage }
+page PricingPage {
+  component: import PricingPage from "@client/pages/PricingPage",
+  authRequired: false
 }
 
 query getChatHistory {

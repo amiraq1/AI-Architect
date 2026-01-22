@@ -115,6 +115,22 @@ export default function ChatPage() {
             const data = await response.json();
 
             if (!response.ok) {
+                // Check for credits exhaustion (402 Payment Required)
+                if (response.status === 402) {
+                    setMessages((prev) => [
+                        ...prev,
+                        {
+                            id: crypto.randomUUID(),
+                            role: 'error',
+                            content: '🛑 عذراً، نفد رصيدك المجاني!\n\nيرجى الانتقال لصفحة الأسعار للاشتراك والحصول على المزيد من الرسائل.',
+                        },
+                    ]);
+                    // Optional: Show a confirmation dialog
+                    if (confirm('نفد رصيدك! هل تريد الانتقال لصفحة الأسعار؟')) {
+                        window.location.href = '/pricing';
+                    }
+                    return;
+                }
                 throw new Error(data.error || 'Failed to get response');
             }
 
@@ -128,13 +144,13 @@ export default function ChatPage() {
                 },
             ]);
         } catch (error: unknown) {
-            const errorMessage = error instanceof Error ? error.message : 'An unexpected error occurred';
+            const errorMessage = error instanceof Error ? error.message : 'حدث خطأ غير متوقع. حاول مرة أخرى.';
             setMessages((prev) => [
                 ...prev,
                 {
                     id: crypto.randomUUID(),
                     role: 'error',
-                    content: errorMessage,
+                    content: `❌ ${errorMessage}`,
                 },
             ]);
         } finally {
@@ -150,67 +166,105 @@ export default function ChatPage() {
             {/* Sidebar */}
             <aside
                 className={`
-          fixed top-0 right-0 z-40 h-full w-72 bg-slate-900 border-l border-slate-800 transition-transform duration-300 ease-in-out
+          fixed inset-y-0 right-0 z-50 
+          w-[85%] sm:w-72 
+          bg-slate-900 shadow-xl shadow-black/50
+          transform transition-transform duration-300 ease-in-out
           ${isSidebarOpen ? 'translate-x-0' : 'translate-x-full'}
-          lg:static lg:translate-x-0 lg:w-64 xl:w-72
+          lg:static lg:translate-x-0 lg:w-64 xl:w-72 lg:shadow-none
         `}
             >
-                <div className="flex flex-col h-full p-4">
-                    <div className="flex items-center justify-between mb-8">
-                        <Link href="/" className="flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center text-white font-bold">
-                                ن
-                            </div>
-                            <span className="font-bold text-lg">بوابة نبض</span>
-                        </Link>
-                        <button onClick={() => setIsSidebarOpen(false)} className="lg:hidden text-slate-400 hover:text-white p-1">
-                            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <div className="flex flex-col h-full">
+                    {/* Mobile Close Header */}
+                    <div className="flex justify-between items-center p-4 border-b border-slate-800 lg:hidden">
+                        <span className="text-white font-bold text-lg">القائمة</span>
+                        <button
+                            onClick={() => setIsSidebarOpen(false)}
+                            className="p-2 text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-full transition-colors"
+                        >
+                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                             </svg>
                         </button>
                     </div>
 
-                    <button
-                        onClick={() => window.location.reload()}
-                        className="w-full py-3 px-4 mb-6 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-cyan-500/10 active:scale-95"
-                    >
-                        <span>محادثة جديدة</span>
-                        <span className="text-xl leading-none">➕</span>
-                    </button>
-
-                    <nav className="flex-1 space-y-2">
-                        <div className="text-xs font-semibold text-slate-500 mb-2 px-2">الرئيسية</div>
-                        <Link href="/" className="flex items-center gap-3 px-3 py-2 text-slate-300 hover:bg-slate-800 hover:text-white rounded-lg transition-colors">
-                            <span>🏠</span> الصفحة الرئيسية
-                        </Link>
-                        <div className="flex items-center gap-3 px-3 py-2 bg-slate-800/50 text-cyan-400 rounded-lg font-medium cursor-default">
-                            <span>💬</span> المحادثة الحالية
+                    <div className="flex-1 flex flex-col p-4 overflow-y-auto">
+                        {/* Logo - Desktop only */}
+                        <div className="hidden lg:flex items-center justify-between mb-8">
+                            <Link href="/" className="flex items-center gap-2">
+                                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center text-white font-bold">
+                                    ن
+                                </div>
+                                <span className="font-bold text-lg">بوابة نبض</span>
+                            </Link>
                         </div>
 
-                        <div className="mt-8 text-xs font-semibold text-slate-500 mb-2 px-2">الإعدادات</div>
-                        <button className="w-full flex items-center gap-3 px-3 py-2 text-slate-300 hover:bg-slate-800 hover:text-white rounded-lg transition-colors text-right">
-                            <span>⚙️</span> الإعدادات العامة
+                        <button
+                            onClick={() => window.location.reload()}
+                            className="w-full py-3 px-4 mb-6 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-cyan-500/10 active:scale-95"
+                        >
+                            <span>محادثة جديدة</span>
+                            <span className="text-xl leading-none">➕</span>
                         </button>
-                        <Link href="/login" className="flex items-center gap-3 px-3 py-2 text-red-400 hover:bg-red-500/10 hover:text-red-300 rounded-lg transition-colors mt-auto">
-                            <span>🚪</span> تسجيل خروج
-                        </Link>
-                    </nav>
 
-                    <div className="mt-auto pt-4 border-t border-slate-800">
-                        <div className="flex items-center gap-3 px-2">
-                            <div className="w-9 h-9 rounded-full bg-slate-700 flex items-center justify-center text-xs">👤</div>
-                            <div className="flex flex-col">
-                                <span className="text-sm font-medium text-white">مستخدم زائر</span>
-                                <span className="text-xs text-slate-500">Free Plan</span>
+                        <nav className="flex-1 space-y-2">
+                            <div className="text-xs font-semibold text-slate-500 mb-2 px-2">الرئيسية</div>
+                            <Link href="/" className="flex items-center gap-3 px-3 py-2 text-slate-300 hover:bg-slate-800 hover:text-white rounded-lg transition-colors">
+                                <span>🏠</span> الصفحة الرئيسية
+                            </Link>
+                            <div className="flex items-center gap-3 px-3 py-2 bg-slate-800/50 text-cyan-400 rounded-lg font-medium cursor-default">
+                                <span>💬</span> المحادثة الحالية
+                            </div>
+
+                            <div className="mt-6 text-xs font-semibold text-slate-500 mb-2 px-2">الاشتراك</div>
+                            <Link href="/pricing" className="flex items-center gap-3 px-3 py-2 text-slate-300 hover:bg-slate-800 hover:text-white rounded-lg transition-colors">
+                                <span>💳</span> الأسعار والاشتراكات
+                            </Link>
+
+                            <div className="mt-6 text-xs font-semibold text-slate-500 mb-2 px-2">الإعدادات</div>
+                            <button className="w-full flex items-center gap-3 px-3 py-2 text-slate-300 hover:bg-slate-800 hover:text-white rounded-lg transition-colors text-right">
+                                <span>⚙️</span> الإعدادات العامة
+                            </button>
+
+                            {/* Admin Link - TODO: Show only for admins */}
+                            <Link href="/admin" className="flex items-center gap-3 px-3 py-2 text-amber-400 hover:bg-amber-500/10 rounded-lg transition-colors border border-amber-400/20">
+                                <span>📊</span> لوحة الإدارة
+                            </Link>
+
+                            <Link href="/login" className="flex items-center gap-3 px-3 py-2 text-red-400 hover:bg-red-500/10 hover:text-red-300 rounded-lg transition-colors">
+                                <span>🚪</span> تسجيل خروج
+                            </Link>
+                        </nav>
+
+                        {/* User Credits */}
+                        <div className="mt-auto pt-4 border-t border-slate-800 space-y-4">
+                            <div className="bg-slate-800/50 rounded-lg p-3">
+                                <div className="flex justify-between items-center text-xs text-slate-400 mb-2">
+                                    <span>الرصيد المتبقي</span>
+                                    <span className="text-white font-bold">50 / 50</span>
+                                </div>
+                                <div className="w-full bg-slate-700 h-1.5 rounded-full overflow-hidden">
+                                    <div className="bg-gradient-to-r from-cyan-500 to-blue-500 h-full w-full transition-all" />
+                                </div>
+                                <p className="text-[10px] text-slate-500 mt-2">يتجدد يومياً • خطة مجانية</p>
+                            </div>
+
+                            <div className="flex items-center gap-3 px-2">
+                                <div className="w-9 h-9 rounded-full bg-slate-700 flex items-center justify-center text-xs">👤</div>
+                                <div className="flex flex-col">
+                                    <span className="text-sm font-medium text-white">مستخدم زائر</span>
+                                    <span className="text-xs text-slate-500">Free Plan</span>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
             </aside>
 
+            {/* Mobile Backdrop */}
             {isSidebarOpen && (
                 <div
-                    className="fixed inset-0 bg-black/50 backdrop-blur-sm z-30 lg:hidden"
+                    className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden"
                     onClick={() => setIsSidebarOpen(false)}
                 />
             )}
@@ -219,40 +273,48 @@ export default function ChatPage() {
             <div className="flex-1 flex flex-col h-full min-w-0 relative">
 
                 {/* Header */}
-                <header className="flex-none h-16 border-b border-slate-800 bg-slate-950/80 backdrop-blur-md flex items-center justify-between px-4 sticky top-0 z-20">
-                    <div className="flex items-center gap-3">
+                <header className="flex-none border-b border-slate-800 bg-slate-950/80 backdrop-blur-md sticky top-0 z-20">
+                    {/* Mobile Header */}
+                    <div className="lg:hidden flex items-center justify-between px-4 py-3">
+                        <span className="text-xl font-bold text-cyan-400">نبض | Nabd</span>
                         <button
                             onClick={() => setIsSidebarOpen(true)}
-                            className="lg:hidden p-2 -mr-2 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg"
+                            className="p-2 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white focus:outline-none transition-colors"
                         >
-                            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <span className="sr-only">فتح القائمة</span>
+                            <svg className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
                             </svg>
                         </button>
-
-                        <div className="flex flex-col">
-                            <h1 className="text-sm font-bold text-white flex items-center gap-2">
-                                <span>{selectedAgent.name}</span>
-                                <span className="text-lg">{selectedAgent.icon}</span>
-                            </h1>
-                            <span className="text-[10px] text-slate-400 flex items-center gap-1">
-                                <span>مفعل</span>
-                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                            </span>
-                        </div>
                     </div>
 
-                    <button
-                        onClick={() => setModelName(prev => prev.includes('8b') ? 'llama-3.3-70b-versatile' : 'llama-3.1-8b-instant')}
-                        className={`
-              px-3 py-1.5 rounded-lg text-xs font-bold border transition-all flex items-center gap-2
-              ${modelName.includes('70b')
-                                ? 'bg-purple-500/10 text-purple-300 border-purple-500/30'
-                                : 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30'}
-            `}
-                    >
-                        <span>{modelName.includes('70b') ? 'ذكي 🧠' : 'سريع 🚀'}</span>
-                    </button>
+                    {/* Desktop Header */}
+                    <div className="hidden lg:flex items-center justify-between h-16 px-4">
+                        <div className="flex items-center gap-3">
+                            <div className="flex flex-col">
+                                <h1 className="text-sm font-bold text-white flex items-center gap-2">
+                                    <span>{selectedAgent.name}</span>
+                                    <span className="text-lg">{selectedAgent.icon}</span>
+                                </h1>
+                                <span className="text-[10px] text-slate-400 flex items-center gap-1">
+                                    <span>مفعل</span>
+                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                                </span>
+                            </div>
+                        </div>
+
+                        <button
+                            onClick={() => setModelName(prev => prev.includes('8b') ? 'llama-3.3-70b-versatile' : 'llama-3.1-8b-instant')}
+                            className={`
+                                px-3 py-1.5 rounded-lg text-xs font-bold border transition-all flex items-center gap-2
+                                ${modelName.includes('70b')
+                                    ? 'bg-purple-500/10 text-purple-300 border-purple-500/30'
+                                    : 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30'}
+                            `}
+                        >
+                            <span>{modelName.includes('70b') ? 'ذكي 🧠' : 'سريع 🚀'}</span>
+                        </button>
+                    </div>
                 </header>
 
                 <div className="w-full overflow-x-auto no-scrollbar border-b border-slate-800 bg-slate-950/50 py-2 flex-none">
