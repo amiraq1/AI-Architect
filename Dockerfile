@@ -5,7 +5,7 @@
 # ───────────────────────────────────────────────────────────────────────────────
 # Stage 1: Base with Puppeteer dependencies
 # ───────────────────────────────────────────────────────────────────────────────
-FROM node:18-slim AS base
+FROM node:20-slim AS base
 
 # Install Chrome/Puppeteer dependencies for web browsing agent
 RUN apt-get update && apt-get install -y \
