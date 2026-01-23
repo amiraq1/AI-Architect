@@ -31,11 +31,7 @@ jobs:
 
       # Install the cosign tool except on PR
       # https://github.com/sigstore/cosign-installer
-      - name: Install cosign
-        if: github.event_name != 'pull_request'
-        uses: sigstore/cosign-installer@v3.1.1
-        with:
-          cosign-release: 'v2.1.1'
+
 
       # Set up Buildx
       - name: Set up Docker Buildx
@@ -81,9 +77,4 @@ jobs:
       # repository is public to avoid leaking data.  If you would like to publish
       # transparency data even for private images, pass --force to cosign below.
       # https://github.com/sigstore/cosign
-      - name: Sign the published Docker image
-        if: ${{ github.event_name != 'pull_request' }}
-        env:
-          TAGS: ${{ steps.meta.outputs.tags }}
-          DIGEST: ${{ steps.build-and-push.outputs.digest }}
-        run: echo "${TAGS}" | xargs -I {} cosign sign --yes {}@${DIGEST}
+
