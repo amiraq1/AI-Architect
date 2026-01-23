@@ -5,11 +5,7 @@ const nextConfig: NextConfig = {
   images: {
     unoptimized: true,
   },
-  eslint: {
-    // Warning: This allows production builds to successfully complete even if
-    // your project has ESLint errors.
-    ignoreDuringBuilds: true,
-  },
+  // eslint config is removed as it's no longer supported in next.config.ts for this version
   typescript: {
     // !! WARN !!
     // Dangerously allow production builds to successfully complete even if
