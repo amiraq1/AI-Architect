@@ -1,144 +1,152 @@
-import React from 'react';
+'use client';
+
+import Link from 'next/link';
 
 export default function AdminDashboard() {
     return (
-        <div className="min-h-screen bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 flex font-sans" dir="rtl">
+        <div className="min-h-screen bg-slate-950 text-slate-100 font-sans flex overflow-hidden" dir="rtl">
+
+            {/* Background Gradients */}
+            <div className="fixed inset-0 pointer-events-none">
+                <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-blue-600/5 rounded-full blur-[100px]" />
+                <div className="absolute bottom-0 left-0 w-[500px] h-[500px] bg-cyan-600/5 rounded-full blur-[100px]" />
+            </div>
 
             {/* Sidebar */}
-            <aside className="w-64 bg-white dark:bg-gray-800 shadow-md hidden md:flex flex-col">
-                <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-                    <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-indigo-600">
-                        نبض - المسؤول
-                    </h1>
-                </div>
-                <nav className="flex-1 p-4 space-y-2">
-                    <a href="#" className="flex items-center px-4 py-3 bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 rounded-lg font-medium transition-colors">
-                        <span className="ml-3">📊</span>
-                        نظرة عامة
-                    </a>
-                    <a href="#" className="flex items-center px-4 py-3 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg transition-colors">
-                        <span className="ml-3">👥</span>
-                        المستخدمين
-                    </a>
-                    <a href="#" className="flex items-center px-4 py-3 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg transition-colors">
-                        <span className="ml-3">💬</span>
-                        المحادثات
-                    </a>
-                    <a href="#" className="flex items-center px-4 py-3 text-gray-600 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700/50 rounded-lg transition-colors">
-                        <span className="ml-3">⚙️</span>
-                        الإعدادات
-                    </a>
-                </nav>
-                <div className="p-4 border-t border-gray-200 dark:border-gray-700">
-                    <div className="flex items-center">
-                        <div className="w-8 h-8 rounded-full bg-indigo-500 flex items-center justify-center text-white font-bold ml-3">
-                            م
+            <aside className="w-20 lg:w-64 bg-slate-900/50 backdrop-blur-xl border-l border-white/5 flex flex-col z-20 transition-all duration-300">
+                <div className="h-16 flex items-center justify-center lg:justify-start lg:px-6 border-b border-white/5">
+                    <Link href="/" className="flex items-center gap-3 group">
+                        <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-white font-bold shadow-lg shadow-amber-500/20">
+                            ⚡
                         </div>
-                        <div>
-                            <p className="text-sm font-medium">المدير العام</p>
-                            <p className="text-xs text-gray-500">admin@nabd.ai</p>
+                        <span className="font-bold text-lg hidden lg:block text-slate-200">نبض Admin</span>
+                    </Link>
+                </div>
+
+                <nav className="flex-1 py-4 space-y-1 px-2">
+                    {[
+                        { name: 'نظرة عامة', icon: '📊', active: true },
+                        { name: 'المستخدمين', icon: '👥', active: false },
+                        { name: 'المحادثات', icon: '💬', active: false },
+                        { name: 'الاشتراكات', icon: '💳', active: false },
+                        { name: 'الإعدادات', icon: '⚙️', active: false },
+                    ].map((item, idx) => (
+                        <a
+                            key={idx}
+                            href="#"
+                            className={`
+                 flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-200
+                 ${item.active
+                                    ? 'bg-amber-500/10 text-amber-500 shadow-[0_0_15px_rgba(245,158,11,0.15)]'
+                                    : 'text-slate-500 hover:text-slate-200 hover:bg-white/5'
+                                }
+               `}
+                        >
+                            <span className="text-xl">{item.icon}</span>
+                            <span className="hidden lg:block font-medium text-sm">{item.name}</span>
+                        </a>
+                    ))}
+                </nav>
+
+                <div className="p-4 border-t border-white/5">
+                    <div className="flex items-center gap-3 px-2 py-2 cursor-pointer hover:bg-white/5 rounded-xl transition-colors">
+                        <div className="w-8 h-8 rounded-full bg-slate-800 flex items-center justify-center text-xs border border-white/10">👤</div>
+                        <div className="hidden lg:block overflow-hidden">
+                            <p className="text-sm font-bold text-slate-200 truncate">علي (Admin)</p>
+                            <p className="text-[10px] text-slate-500 truncate">ali@nabd.ai</p>
                         </div>
                     </div>
                 </div>
             </aside>
 
             {/* Main Content */}
-            <main className="flex-1 p-8 overflow-y-auto">
-                <header className="flex justify-between items-center mb-8">
-                    <div>
-                        <h2 className="text-3xl font-bold text-gray-800 dark:text-white">لوحة التحكم</h2>
-                        <p className="text-gray-500 dark:text-gray-400 mt-1">مرحباً بك مرة أخرى، إليك ملخص أداء النظام اليوم.</p>
+            <main className="flex-1 flex flex-col relative overflow-hidden">
+                {/* Top Bar */}
+                <header className="h-16 border-b border-white/5 bg-slate-900/20 backdrop-blur-sm flex items-center justify-between px-8 z-10">
+                    <h2 className="text-lg font-bold text-slate-300">لوحة القيادة</h2>
+                    <div className="flex items-center gap-4">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_10px_#10b981]"></span>
+                        <span className="text-xs text-emerald-500 font-mono tracking-wider">SYSTEM ONLINE</span>
                     </div>
-                    <button className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg shadow transition-colors">
-                        تحديث البيانات
-                    </button>
                 </header>
 
-                {/* Stats Grid */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                    {/* Card 1 */}
-                    <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
-                        <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">المستخدمين النشطين</h3>
-                            <span className="p-2 bg-green-100 dark:bg-green-900/30 text-green-600 rounded-lg">👥</span>
-                        </div>
-                        <p className="text-3xl font-bold text-gray-800 dark:text-white">1,248</p>
-                        <p className="text-sm text-green-500 flex items-center mt-2">
-                            <span className="ml-1">↑</span>
-                            <span>12%</span>
-                            <span className="text-gray-400 mr-2">من الأسبوع الماضي</span>
-                        </p>
+                {/* Content Scroll */}
+                <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+
+                    {/* Stats Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                        {[
+                            { title: "المستخدمين النشطين", val: "2,405", icon: "👥", color: "from-blue-500 to-cyan-500" },
+                            { title: "الرسائل اليوم", val: "85.2K", icon: "💬", color: "from-purple-500 to-pink-500" },
+                            { title: "الإيرادات", val: "$4,200", icon: "💎", color: "from-emerald-500 to-teal-500" },
+                            { title: "صحة السيرفر", val: "99.9%", icon: "⚡", color: "from-amber-500 to-orange-500" },
+                        ].map((stat, i) => (
+                            <div key={i} className="group relative p-6 bg-slate-900/40 backdrop-blur-md rounded-2xl border border-white/5 hover:border-white/10 transition-all duration-300 hover:-translate-y-1">
+                                <div className={`absolute inset-0 bg-gradient-to-br ${stat.color} opacity-[0.03] rounded-2xl group-hover:opacity-[0.08] transition-opacity`} />
+                                <div className="flex justify-between items-start mb-4 relative">
+                                    <div>
+                                        <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">{stat.title}</p>
+                                        <h3 className="text-3xl font-black text-white">{stat.val}</h3>
+                                    </div>
+                                    <div className={`w-10 h-10 rounded-xl bg-gradient-to-br ${stat.color} flex items-center justify-center text-lg shadow-lg opacity-80`}>
+                                        {stat.icon}
+                                    </div>
+                                </div>
+                                <div className="w-full bg-slate-800/50 h-1 rounded-full overflow-hidden">
+                                    <div className={`h-full bg-gradient-to-r ${stat.color} w-[70%]`} />
+                                </div>
+                            </div>
+                        ))}
                     </div>
 
-                    {/* Card 2 */}
-                    <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
-                        <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">إجمالي المحادثات</h3>
-                            <span className="p-2 bg-blue-100 dark:bg-blue-900/30 text-blue-600 rounded-lg">💬</span>
+                    {/* Big Chart Area (Mockup) */}
+                    <div className="mb-8 p-1 bg-slate-900/40 backdrop-blur-md rounded-2xl border border-white/5 h-80 relative overflow-hidden group">
+                        <div className="absolute top-6 right-6 z-10">
+                            <h3 className="text-slate-300 font-bold">تحليلات الأداء</h3>
+                            <p className="text-xs text-slate-500">آخر 24 ساعة</p>
                         </div>
-                        <p className="text-3xl font-bold text-gray-800 dark:text-white">45,392</p>
-                        <p className="text-sm text-green-500 flex items-center mt-2">
-                            <span className="ml-1">↑</span>
-                            <span>8%</span>
-                            <span className="text-gray-400 mr-2">من الأمس</span>
-                        </p>
+
+                        {/* Decorative Grid */}
+                        <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-[0.03]" />
+
+                        {/* Mockup Line Chart using CSS */}
+                        <div className="absolute inset-x-0 bottom-0 top-20 flex items-end justify-between px-8 pb-8 gap-2 opacity-50">
+                            {[40, 60, 45, 70, 50, 80, 60, 90, 75, 85, 65, 95, 80, 100, 90].map((h, i) => (
+                                <div key={i} className="w-full bg-gradient-to-t from-cyan-500/20 to-cyan-500/80 rounded-t-sm transition-all duration-1000 group-hover:scale-y-110 origin-bottom" style={{ height: `${h}%` }}></div>
+                            ))}
+                        </div>
                     </div>
 
-                    {/* Card 3 */}
-                    <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
-                        <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">استهلاك الـ API</h3>
-                            <span className="p-2 bg-purple-100 dark:bg-purple-900/30 text-purple-600 rounded-lg">⚡</span>
+                    {/* Recent Table */}
+                    <div className="bg-slate-900/40 backdrop-blur-md rounded-2xl border border-white/5 overflow-hidden">
+                        <div className="p-6 border-b border-white/5">
+                            <h3 className="font-bold text-white">العمليات الأخيرة</h3>
                         </div>
-                        <p className="text-3xl font-bold text-gray-800 dark:text-white">89%</p>
-                        <p className="text-sm text-yellow-500 flex items-center mt-2">
-                            <span className="ml-1">⚠</span>
-                            <span>مرتفع</span>
-                            <span className="text-gray-400 mr-2">الحد اليومي</span>
-                        </p>
-                    </div>
-
-                    {/* Card 4 */}
-                    <div className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700">
-                        <div className="flex items-center justify-between mb-4">
-                            <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400">حالة النظام</h3>
-                            <span className="p-2 bg-red-100 dark:bg-red-900/30 text-red-600 rounded-lg">🖥️</span>
-                        </div>
-                        <p className="text-xl font-bold text-green-500">مستقر ✅</p>
-                        <p className="text-sm text-gray-400 mt-2">آخر تحديث: قبل دقيقة</p>
-                    </div>
-                </div>
-
-                {/* Recent Activity Table */}
-                <div className="bg-white dark:bg-gray-800 rounded-xl shadow-sm border border-gray-100 dark:border-gray-700 overflow-hidden">
-                    <div className="p-6 border-b border-gray-200 dark:border-gray-700">
-                        <h3 className="text-lg font-bold text-gray-800 dark:text-white">النشاطات الأخيرة</h3>
-                    </div>
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-right">
-                            <thead className="bg-gray-50 dark:bg-gray-700/50">
+                        <table className="w-full text-sm text-right">
+                            <thead className="bg-white/5 text-slate-400">
                                 <tr>
-                                    <th className="px-6 py-4 text-xs font-medium text-gray-500 uppercase tracking-wider">المستخدم</th>
-                                    <th className="px-6 py-4 text-xs font-medium text-gray-500 uppercase tracking-wider">الإجراء</th>
-                                    <th className="px-6 py-4 text-xs font-medium text-gray-500 uppercase tracking-wider">الوقت</th>
-                                    <th className="px-6 py-4 text-xs font-medium text-gray-500 uppercase tracking-wider">الحالة</th>
+                                    <th className="px-6 py-4 font-medium">العميل</th>
+                                    <th className="px-6 py-4 font-medium">العملية</th>
+                                    <th className="px-6 py-4 font-medium">التوقيت</th>
+                                    <th className="px-6 py-4 font-medium">الحالة</th>
                                 </tr>
                             </thead>
-                            <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+                            <tbody className="divide-y divide-white/5 text-slate-300">
                                 {[
-                                    { user: 'أحمد محمد', action: 'بدء محادثة جديدة', time: 'منذ 5 دقائق', status: 'مكتمل' },
-                                    { user: 'سارة علي', action: 'تسجيل دخول', time: 'منذ 15 دقيقة', status: 'مكتمل' },
-                                    { user: 'خالد عمر', action: 'توليد كود بايثون', time: 'منذ 25 دقيقة', status: 'جاري المعالجة' },
-                                    { user: 'منى يوسف', action: 'تحديث الملف الشخصي', time: 'منذ ساعة', status: 'مكتمل' },
-                                ].map((item, index) => (
-                                    <tr key={index} className="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-white">{item.user}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-300">{item.action}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-400">{item.time}</td>
-                                        <td className="px-6 py-4 whitespace-nowrap">
-                                            <span className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${item.status === 'مكتمل' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
-                                                }`}>
-                                                {item.status}
+                                    { u: "مريم أحمد", op: "شراء خطة Pro", t: "منذ 2 دقيقة", s: "Success" },
+                                    { u: "شركة الرافدين", op: "تحديث API Key", t: "منذ 15 دقيقة", s: "Success" },
+                                    { u: "سيف علي", op: "فشل الدفع", t: "منذ 40 دقيقة", s: "Failed" },
+                                ].map((row, i) => (
+                                    <tr key={i} className="hover:bg-white/5 transition-colors">
+                                        <td className="px-6 py-4 font-medium text-white">{row.u}</td>
+                                        <td className="px-6 py-4">{row.op}</td>
+                                        <td className="px-6 py-4 text-slate-500">{row.t}</td>
+                                        <td className="px-6 py-4">
+                                            <span className={`
+                                 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wide
+                                 ${row.s === 'Success' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-red-500/10 text-red-400 border border-red-500/20'}
+                              `}>
+                                                {row.s}
                                             </span>
                                         </td>
                                     </tr>
@@ -146,8 +154,8 @@ export default function AdminDashboard() {
                             </tbody>
                         </table>
                     </div>
-                </div>
 
+                </div>
             </main>
         </div>
     );

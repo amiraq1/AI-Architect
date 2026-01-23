@@ -1,407 +1,123 @@
 'use client';
 
-import { useState, useRef, useEffect, FormEvent } from 'react';
-import Link from 'next/link';
-import ChatInput from './ChatInput';
-import MessageContent from '@/components/MessageContent';
+import { useState, useRef, useEffect } from 'react';
+import { useChat } from '@/hooks/useChat';
+import { ChatSidebar } from '@/components/chat/ChatSidebar';
+import { ChatMessage } from '@/components/chat/ChatMessage';
+import { CommandInput } from '@/components/chat/CommandInput';
 import AgentLoader from '@/components/AgentLoader';
 
-// ═══════════════════════════════════════════════════════════════════════════════
-// CONSTANTS & TYPES
-// ═══════════════════════════════════════════════════════════════════════════════
-
-const AGENT_MODES = [
-    { id: 'general', name: 'مساعد عام', icon: '🤖' },
-    { id: 'coder', name: 'مبرمج', icon: '👨‍💻' },
-    { id: 'writer', name: 'كاتب', icon: '📝' },
-    { id: 'researcher', name: 'باحث', icon: '🔍' },
+const AGENTS = [
+    { id: 'general', name: 'عام', icon: '🧠' },
+    { id: 'coder', name: 'مبرمج', icon: '💻' },
+    { id: 'writer', name: 'كاتب', icon: '✒️' },
+    { id: 'academic', name: 'أكاديمي', icon: '🎓' },
 ];
-
-const QUICK_ACTIONS = [
-    'ما هي آخر أخبار التكنولوجيا؟',
-    'اكتب لي كود بايثون',
-    'لخص هذا المقال',
-    'تحليل بيانات السوق'
-];
-
-interface Message {
-    id: string;
-    role: 'user' | 'assistant' | 'error';
-    content: string;
-    plan?: string[];
-    attachment?: {
-        name: string;
-        type: string;
-    };
-}
-
-// Helper to convert file to Base64
-const convertFileToBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(file);
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = error => reject(error);
-    });
-};
-
-// ═══════════════════════════════════════════════════════════════════════════════
-// COMPONENT
-// ═══════════════════════════════════════════════════════════════════════════════
 
 export default function ChatPage() {
-    const [messages, setMessages] = useState<Message[]>([]);
-    const [isLoading, setIsLoading] = useState(false);
-    const [agentMode, setAgentMode] = useState('general');
-    const [modelName, setModelName] = useState('llama-3.1-8b-instant');
+    const { messages, isLoading, sendMessage, clearMessages } = useChat();
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-
+    const [selectedAgent, setSelectedAgent] = useState('general');
+    const [model, setModel] = useState('llama-3.1-8b-instant');
     const messagesEndRef = useRef<HTMLDivElement>(null);
 
-    const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    };
-
-    // التمرير للأسفل عند تغيير الرسائل أو حالة التحميل
     useEffect(() => {
-        scrollToBottom();
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages, isLoading]);
 
-    const handleSend = async (messageText: string, file: File | null) => {
-        if (!messageText.trim() && !file) return;
-
-        let attachmentData = null;
-        let displayContent = messageText;
-
-        if (file) {
-            try {
-                const base64Content = await convertFileToBase64(file);
-                attachmentData = {
-                    name: file.name,
-                    type: file.type,
-                    content: base64Content
-                };
-                // Adding a visual indicator to the user message
-                if (!displayContent) displayContent = `[مرفق: ${file.name}]`;
-            } catch (error) {
-                console.error("File conversion error:", error);
-                alert("فشل في قراءة الملف المرفق");
-                return;
-            }
-        }
-
-        const userMessage: Message = {
-            id: crypto.randomUUID(),
-            role: 'user',
-            content: displayContent,
-            attachment: attachmentData ? { name: attachmentData.name, type: attachmentData.type } : undefined
-        };
-
-        setMessages((prev) => [...prev, userMessage]);
-        setIsLoading(true);
-
-        try {
-            const response = await fetch('/api/nabd', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    query: messageText, // The prompt text
-                    agentMode,
-                    modelName,
-                    attachment: attachmentData // The full file data
-                }),
-            });
-
-            const data = await response.json();
-
-            if (!response.ok) {
-                // Check for credits exhaustion (402 Payment Required)
-                if (response.status === 402) {
-                    setMessages((prev) => [
-                        ...prev,
-                        {
-                            id: crypto.randomUUID(),
-                            role: 'error',
-                            content: '🛑 عذراً، نفد رصيدك المجاني!\n\nيرجى الانتقال لصفحة الأسعار للاشتراك والحصول على المزيد من الرسائل.',
-                        },
-                    ]);
-                    // Optional: Show a confirmation dialog
-                    if (confirm('نفد رصيدك! هل تريد الانتقال لصفحة الأسعار؟')) {
-                        window.location.href = '/pricing';
-                    }
-                    return;
-                }
-                throw new Error(data.error || 'Failed to get response');
-            }
-
-            setMessages((prev) => [
-                ...prev,
-                {
-                    id: crypto.randomUUID(),
-                    role: 'assistant',
-                    content: data.result || data.response || JSON.stringify(data),
-                    plan: data.plan,
-                },
-            ]);
-        } catch (error: unknown) {
-            const errorMessage = error instanceof Error ? error.message : 'حدث خطأ غير متوقع. حاول مرة أخرى.';
-            setMessages((prev) => [
-                ...prev,
-                {
-                    id: crypto.randomUUID(),
-                    role: 'error',
-                    content: `❌ ${errorMessage}`,
-                },
-            ]);
-        } finally {
-            setIsLoading(false);
-        }
-    };
-
-    const selectedAgent = AGENT_MODES.find((a) => a.id === agentMode)!;
-
     return (
-        <div className="flex bg-slate-950 text-slate-100 font-sans h-[100dvh] overflow-hidden" dir="rtl">
+        <div className="flex h-[100dvh] bg-slate-950 text-slate-100 font-sans overflow-hidden selection:bg-cyan-500/30" dir="rtl">
 
             {/* Sidebar */}
-            <aside
-                className={`
-          fixed inset-y-0 right-0 z-50 
-          w-[85%] sm:w-72 
-          bg-slate-900 shadow-xl shadow-black/50
-          transform transition-transform duration-300 ease-in-out
-          ${isSidebarOpen ? 'translate-x-0' : 'translate-x-full'}
-          lg:static lg:translate-x-0 lg:w-64 xl:w-72 lg:shadow-none
-        `}
-            >
-                <div className="flex flex-col h-full">
-                    {/* Mobile Close Header */}
-                    <div className="flex justify-between items-center p-4 border-b border-slate-800 lg:hidden">
-                        <span className="text-white font-bold text-lg">القائمة</span>
-                        <button
-                            onClick={() => setIsSidebarOpen(false)}
-                            className="p-2 text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-full transition-colors"
-                        >
-                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                            </svg>
-                        </button>
-                    </div>
+            <ChatSidebar
+                isOpen={isSidebarOpen}
+                onClose={() => setIsSidebarOpen(false)}
+                onNewChat={clearMessages}
+                messagesCount={messages.length}
+            />
 
-                    <div className="flex-1 flex flex-col p-4 overflow-y-auto">
-                        {/* Logo - Desktop only */}
-                        <div className="hidden lg:flex items-center justify-between mb-8">
-                            <Link href="/" className="flex items-center gap-2">
-                                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center text-white font-bold">
-                                    ن
-                                </div>
-                                <span className="font-bold text-lg">بوابة نبض</span>
-                            </Link>
-                        </div>
+            {/* Main Area */}
+            <div className="flex-1 flex flex-col relative min-w-0">
 
-                        <button
-                            onClick={() => window.location.reload()}
-                            className="w-full py-3 px-4 mb-6 bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white rounded-xl font-bold flex items-center justify-center gap-2 transition-all shadow-lg shadow-cyan-500/10 active:scale-95"
-                        >
-                            <span>محادثة جديدة</span>
-                            <span className="text-xl leading-none">➕</span>
+                {/* Header (Glass) */}
+                <header className="absolute top-0 w-full z-20 flex items-center justify-between p-4 bg-slate-950/20 backdrop-blur-sm">
+                    <div className="flex items-center gap-4">
+                        <button onClick={() => setIsSidebarOpen(true)} className="lg:hidden p-2 text-slate-400 hover:text-white">
+                            <span className="sr-only">Menu</span>
+                            <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>
                         </button>
 
-                        <nav className="flex-1 space-y-2">
-                            <div className="text-xs font-semibold text-slate-500 mb-2 px-2">الرئيسية</div>
-                            <Link href="/" className="flex items-center gap-3 px-3 py-2 text-slate-300 hover:bg-slate-800 hover:text-white rounded-lg transition-colors">
-                                <span>🏠</span> الصفحة الرئيسية
-                            </Link>
-                            <div className="flex items-center gap-3 px-3 py-2 bg-slate-800/50 text-cyan-400 rounded-lg font-medium cursor-default">
-                                <span>💬</span> المحادثة الحالية
-                            </div>
-
-                            <div className="mt-6 text-xs font-semibold text-slate-500 mb-2 px-2">الاشتراك</div>
-                            <Link href="/pricing" className="flex items-center gap-3 px-3 py-2 text-slate-300 hover:bg-slate-800 hover:text-white rounded-lg transition-colors">
-                                <span>💳</span> الأسعار والاشتراكات
-                            </Link>
-
-                            <div className="mt-6 text-xs font-semibold text-slate-500 mb-2 px-2">الإعدادات</div>
-                            <button className="w-full flex items-center gap-3 px-3 py-2 text-slate-300 hover:bg-slate-800 hover:text-white rounded-lg transition-colors text-right">
-                                <span>⚙️</span> الإعدادات العامة
-                            </button>
-
-                            {/* Admin Link - TODO: Show only for admins */}
-                            <Link href="/admin" className="flex items-center gap-3 px-3 py-2 text-amber-400 hover:bg-amber-500/10 rounded-lg transition-colors border border-amber-400/20">
-                                <span>📊</span> لوحة الإدارة
-                            </Link>
-
-                            <Link href="/login" className="flex items-center gap-3 px-3 py-2 text-red-400 hover:bg-red-500/10 hover:text-red-300 rounded-lg transition-colors">
-                                <span>🚪</span> تسجيل خروج
-                            </Link>
-                        </nav>
-
-                        {/* User Credits */}
-                        <div className="mt-auto pt-4 border-t border-slate-800 space-y-4">
-                            <div className="bg-slate-800/50 rounded-lg p-3">
-                                <div className="flex justify-between items-center text-xs text-slate-400 mb-2">
-                                    <span>الرصيد المتبقي</span>
-                                    <span className="text-white font-bold">50 / 50</span>
-                                </div>
-                                <div className="w-full bg-slate-700 h-1.5 rounded-full overflow-hidden">
-                                    <div className="bg-gradient-to-r from-cyan-500 to-blue-500 h-full w-full transition-all" />
-                                </div>
-                                <p className="text-[10px] text-slate-500 mt-2">يتجدد يومياً • خطة مجانية</p>
-                            </div>
-
-                            <div className="flex items-center gap-3 px-2">
-                                <div className="w-9 h-9 rounded-full bg-slate-700 flex items-center justify-center text-xs">👤</div>
-                                <div className="flex flex-col">
-                                    <span className="text-sm font-medium text-white">مستخدم زائر</span>
-                                    <span className="text-xs text-slate-500">Free Plan</span>
-                                </div>
-                            </div>
+                        {/* Agent Selector (Pill) */}
+                        <div className="flex bg-slate-900/50 backdrop-blur-md rounded-full p-1 border border-white/5 shadow-2xl">
+                            {AGENTS.map(agent => (
+                                <button
+                                    key={agent.id}
+                                    onClick={() => setSelectedAgent(agent.id)}
+                                    className={`
+                        px-3 py-1.5 rounded-full text-xs font-bold transition-all duration-300 flex items-center gap-2
+                        ${selectedAgent === agent.id
+                                            ? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-lg shadow-blue-500/20'
+                                            : 'text-slate-400 hover:text-white hover:bg-white/5'}
+                      `}
+                                >
+                                    <span>{agent.icon}</span>
+                                    <span className="hidden sm:inline">{agent.name}</span>
+                                </button>
+                            ))}
                         </div>
                     </div>
-                </div>
-            </aside>
 
-            {/* Mobile Backdrop */}
-            {isSidebarOpen && (
-                <div
-                    className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden"
-                    onClick={() => setIsSidebarOpen(false)}
-                />
-            )}
-
-            {/* Main Content */}
-            <div className="flex-1 flex flex-col h-full min-w-0 relative">
-
-                {/* Header */}
-                <header className="flex-none border-b border-slate-800 bg-slate-950/80 backdrop-blur-md sticky top-0 z-20">
-                    {/* Mobile Header */}
-                    <div className="lg:hidden flex items-center justify-between px-4 py-3">
-                        <span className="text-xl font-bold text-cyan-400">نبض | Nabd</span>
-                        <button
-                            onClick={() => setIsSidebarOpen(true)}
-                            className="p-2 rounded-lg text-slate-300 hover:bg-slate-800 hover:text-white focus:outline-none transition-colors"
-                        >
-                            <span className="sr-only">فتح القائمة</span>
-                            <svg className="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-                            </svg>
-                        </button>
-                    </div>
-
-                    {/* Desktop Header */}
-                    <div className="hidden lg:flex items-center justify-between h-16 px-4">
-                        <div className="flex items-center gap-3">
-                            <div className="flex flex-col">
-                                <h1 className="text-sm font-bold text-white flex items-center gap-2">
-                                    <span>{selectedAgent.name}</span>
-                                    <span className="text-lg">{selectedAgent.icon}</span>
-                                </h1>
-                                <span className="text-[10px] text-slate-400 flex items-center gap-1">
-                                    <span>مفعل</span>
-                                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                                </span>
-                            </div>
-                        </div>
-
-                        <button
-                            onClick={() => setModelName(prev => prev.includes('8b') ? 'llama-3.3-70b-versatile' : 'llama-3.1-8b-instant')}
-                            className={`
-                                px-3 py-1.5 rounded-lg text-xs font-bold border transition-all flex items-center gap-2
-                                ${modelName.includes('70b')
-                                    ? 'bg-purple-500/10 text-purple-300 border-purple-500/30'
-                                    : 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30'}
-                            `}
-                        >
-                            <span>{modelName.includes('70b') ? 'ذكي 🧠' : 'سريع 🚀'}</span>
-                        </button>
-                    </div>
+                    {/* Model Toggle */}
+                    <button
+                        onClick={() => setModel(prev => prev.includes('70b') ? 'llama-3.1-8b-instant' : 'llama-3.3-70b-versatile')}
+                        className={`
+                px-3 py-1.5 rounded-lg text-xs font-bold border transition-all flex items-center gap-2 backdrop-blur-md
+                ${model.includes('70b') ? 'bg-purple-500/10 text-purple-300 border-purple-500/30' : 'bg-emerald-500/10 text-emerald-300 border-emerald-500/30'}
+              `}
+                    >
+                        <span className={`w-2 h-2 rounded-full ${model.includes('70b') ? 'bg-purple-500' : 'bg-emerald-500'} animate-pulse`}></span>
+                        <span>{model.includes('70b') ? 'عبقري (70B)' : 'سريع (8B)'}</span>
+                    </button>
                 </header>
 
-                <div className="w-full overflow-x-auto no-scrollbar border-b border-slate-800 bg-slate-950/50 py-2 flex-none">
-                    <div className="flex px-4 gap-2 min-w-max">
-                        {AGENT_MODES.map((agent) => (
-                            <button
-                                key={agent.id}
-                                onClick={() => setAgentMode(agent.id)}
-                                className={`flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium transition-all whitespace-nowrap ${agentMode === agent.id
-                                    ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
-                                    : 'text-slate-400 hover:text-white hover:bg-slate-800 border border-transparent'
-                                    }`}
-                            >
-                                <span>{agent.icon}</span>
-                                <span>{agent.name}</span>
-                            </button>
-                        ))}
-                    </div>
-                </div>
-
-                {/* Messages */}
-                <main className="flex-1 overflow-y-auto p-4 space-y-6">
-                    {messages.length === 0 && (
-                        <div className="flex flex-col items-center justify-center h-full text-center px-4 animate-in fade-in zoom-in duration-500">
-                            <div className="w-16 h-16 mb-4 rounded-2xl bg-gradient-to-tr from-slate-800 to-slate-900 flex items-center justify-center border border-slate-700 shadow-xl">
-                                <span className="text-3xl">{selectedAgent.icon}</span>
+                {/* Chat Feed */}
+                <main className="flex-1 overflow-y-auto px-4 pt-24 pb-4 scroll-smooth">
+                    <div className="max-w-3xl mx-auto min-h-full flex flex-col justify-end">
+                        {messages.length === 0 ? (
+                            <div className="flex-1 flex flex-col items-center justify-center -mt-20 animate-fade-in-up">
+                                <div className="w-20 h-20 rounded-3xl bg-gradient-to-tr from-slate-800 to-slate-900 flex items-center justify-center border border-white/5 shadow-2xl mb-6 group">
+                                    <span className="text-4xl group-hover:scale-110 transition-transform duration-300">👋</span>
+                                </div>
+                                <h1 className="text-2xl font-bold text-white mb-2">أهلاً بك في نبض</h1>
+                                <p className="text-slate-400 text-center max-w-sm mb-8">
+                                    أنا هنا لمساعدتك في البرمجة، الكتابة، البحث، والتحليل. كيف يمكنني مساعدتك؟
+                                </p>
                             </div>
-                            <h2 className="text-xl font-bold text-white mb-6">كيف يمكنني مساعدتك اليوم؟</h2>
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 w-full max-w-sm">
-                                {QUICK_ACTIONS.map((prompt, idx) => (
-                                    <button
-                                        key={idx}
-                                        onClick={() => handleSend(prompt, null)}
-                                        className="p-3 text-right text-xs bg-slate-900/50 hover:bg-slate-800 border border-slate-800 hover:border-cyan-500/30 rounded-xl text-slate-300 transition-all active:scale-98"
-                                    >
-                                        {prompt}
-                                    </button>
+                        ) : (
+                            <>
+                                {messages.map((msg, i) => (
+                                    <ChatMessage key={msg.id} message={msg} isLast={i === messages.length - 1} />
                                 ))}
+                            </>
+                        )}
+
+                        {isLoading && (
+                            <div className="w-full flex justify-start pb-4 animate-fade-in">
+                                <div className="ml-12">
+                                    <AgentLoader />
+                                </div>
                             </div>
-                        </div>
-                    )}
-
-                    {messages.map((msg) => (
-                        <div
-                            key={msg.id}
-                            className={`flex w-full animate-in slide-in-from-bottom-2 duration-300 ${msg.role === 'user' ? 'justify-start' : 'justify-end'
-                                }`}
-                        >
-                            <div
-                                className={`max-w-[85%] sm:max-w-[75%] rounded-2xl px-5 py-3 shadow-sm text-sm leading-relaxed break-words ${msg.role === 'user'
-                                    ? 'bg-blue-600 text-white rounded-tr-none'
-                                    : msg.role === 'error'
-                                        ? 'bg-red-500/10 text-red-200 border border-red-500/20'
-                                        : 'bg-slate-800 text-slate-200 rounded-tl-none'
-                                    }`}
-                            >
-                                {msg.attachment && (
-                                    <div className="flex items-center gap-2 mb-2 bg-black/20 p-2 rounded-lg">
-                                        <span className="text-xl">📎</span>
-                                        <span className="text-xs truncate max-w-[150px]">{msg.attachment.name}</span>
-                                    </div>
-                                )}
-                                <MessageContent content={msg.content} />
-                                {msg.plan && msg.plan.length > 0 && (
-                                    <div className="mt-2 pt-2 border-t border-white/10 flex flex-wrap gap-1">
-                                        {msg.plan.map((step, i) => (
-                                            <span key={i} className="text-[9px] px-1.5 py-0.5 rounded bg-black/20 text-cyan-200">
-                                                {step}
-                                            </span>
-                                        ))}
-                                    </div>
-                                )}
-                            </div>
-                        </div>
-                    ))}
-
-                    {isLoading && (
-                        <div className="flex justify-start animate-in fade-in slide-in-from-bottom-2 duration-300">
-                            <AgentLoader />
-                        </div>
-                    )}
-
-                    <div ref={messagesEndRef} className="h-1" />
+                        )}
+                        <div ref={messagesEndRef} className="h-4" />
+                    </div>
                 </main>
 
-                <footer className="flex-none p-3 bg-slate-950 border-t border-slate-800">
-                    <ChatInput onSubmit={handleSend} isLoading={isLoading} />
+                {/* Input Area */}
+                <footer className="relative z-20">
+                    <CommandInput
+                        onSubmit={(text, file) => sendMessage(text, file, selectedAgent, model)}
+                        isLoading={isLoading}
+                    />
                 </footer>
 
             </div>
