@@ -85,23 +85,41 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* 📜 Modern Scrollbar */
+/* 📜 Modern Scrollbar (Enhanced for Admin) */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: transparent;
+  background: rgba(2, 6, 23, 0.5);
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #334155;
+  background: rgba(255, 255, 255, 0.1);
   border-radius: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.2);
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #475569;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* 🚀 Entrance Animation */
+@keyframes enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-enter {
+  animation: enter 0.4s ease-out forwards;
 }
 
 /* ✨ Utility Layers */

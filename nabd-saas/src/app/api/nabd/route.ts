@@ -1,155 +1,118 @@
 /**
  * Nabd AI API Route
  * Handles communication with Groq AI directly
+ * Updated: Supports Streaming & Memory History
  */
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { getPromptForAgentMode } from '@/lib/prompts';
+import { sendAlert } from '@/lib/monitoring';
 import Groq from 'groq-sdk';
-
-const GROQ_API_KEY = process.env.GROQ_API_KEY;
-
-// ⚡ PERFORMANCE: Simple In-Memory Cache (LRU-like)
-// Stores the last 100 successful responses to save API costs and reduce latency.
-const responseCache = new Map<string, { response: string, timestamp: number }>();
-const CACHE_TTL = 60 * 60 * 1000; // 1 Hour
-
-function getCachedResponse(key: string): string | null {
-    if (responseCache.has(key)) {
-        const cached = responseCache.get(key)!;
-        if (Date.now() - cached.timestamp < CACHE_TTL) {
-            return cached.response;
-        }
-        responseCache.delete(key);
-    }
-    return null;
-}
-
-function setCachedResponse(key: string, value: string) {
-    if (responseCache.size > 100) {
-        const firstKey = responseCache.keys().next().value;
-        if (firstKey) responseCache.delete(firstKey); // Evict oldest
-    }
-    responseCache.set(key, { response: value, timestamp: Date.now() });
-}
 
 // Initialize Groq client
 const groq = new Groq({
-    apiKey: GROQ_API_KEY || 'gsk_placeholder', // Ensure you set this in .env
+    apiKey: process.env.GROQ_API_KEY || 'gsk_placeholder',
 });
 
+// Use Edge Runtime for Streaming
+export const runtime = 'edge';
+
 export async function POST(request: NextRequest) {
-    const startTime = Date.now();
     try {
         const body = await request.json();
-        const { query, agentMode = 'general', modelName = 'llama-3.1-8b-instant' } = body;
+        const { messages, agentMode = 'general', modelName = 'llama-3.1-70b-versatile' } = body;
 
         // 🛡️ SECURITY: Input Validation
-        if (!query?.trim()) {
-            return NextResponse.json({ error: 'Query is required' }, { status: 400 });
+        if (!messages || !Array.isArray(messages) || messages.length === 0) {
+            return new Response(JSON.stringify({ error: 'Messages array is required' }), { status: 400 });
         }
 
-        // 🛡️ SECURITY: Input Validation
-        if (query.length > 5000) {
-            return NextResponse.json({ error: 'Query too long' }, { status: 400 });
-        }
+        // 🛡️ MEMORY CONTROL: Keep only last 6 messages to save tokens and reduce confusion
+        // We ensure the first system message is always ours, so we strip any client-sent system messages to be safe.
+        const userMessages = messages.filter((m: any) => m.role !== 'system');
+        const recentHistory = userMessages.slice(-6);
 
-        // ⚡ PERFORMANCE: Check Cache first
-        const cacheKey = `${agentMode}:${query.trim()}`;
-        const cachedResult = getCachedResponse(cacheKey);
-        if (cachedResult) {
-            return NextResponse.json({
-                response: cachedResult,
-                model: modelName,
-                mode: agentMode,
-                cached: true,
-                latency: Date.now() - startTime
-            });
-        }
-
-        // ⚠️ DEMO MODE: If no API key is set, return a high-quality mock response.
-        if (!GROQ_API_KEY || GROQ_API_KEY.startsWith('gsk_your')) {
-            console.warn('⚠️ Nabd is running in DEMO MODE (No API Key found).');
-
-            // Simulate network delay for realism
-            await new Promise(resolve => setTimeout(resolve, 1500));
-
-            let mockResponse = `هذا رد تجريبي من **نبض** (وضع العرض التجريبي).\n\nبما أن مفتاح API غير مضبوط في ملف \`.env\`، فأنا أقوم بمحاكاة الإجابة.\n\nسألتني: "${query}"\n\nالإجابة النموذجية ستكون هنا مدعومة بالذكاء الاصطناعي الحقيقي عند تفعيله.`;
-
-            if (agentMode === 'coder') {
-                mockResponse = `\`\`\`python\n# مثال على كود بايثون (وضع تجريبي)\ndef nabd_demo():\n    print("أهلاً بك في ذكاء نبض!")\n    return "نجاح"\n\`\`\`\n\nهذا كود تجريبي لأن النظام يعمل بدون مفتاح API حالياً.`;
-            }
-
-            setCachedResponse(cacheKey, mockResponse);
-
-            return NextResponse.json({
-                response: mockResponse,
-                model: 'demo-mock-model',
-                mode: agentMode,
-                cached: false,
-                latency: Date.now() - startTime
-            });
-        }
-
-        // Get the advanced system prompt based on the agent mode
+        // Get the advanced system prompt
         const systemPrompt = getPromptForAgentMode(agentMode);
 
-        try {
-            console.log(`Sending request to Groq with mode: ${agentMode}...`);
+        // Build the full chain
+        const fullConversation = [
+            { role: 'system', content: systemPrompt },
+            { role: 'system', content: "IMPORTANT: Answer strictly in Arabic. Follow the Output Protocol." },
+            ...recentHistory
+        ];
 
-            // 🛡️ SECURITY: Prompt Separation to prevent Injection
-            // We pass the layout instruction as a separate SYSTEM message, not appended to USER message.
-            const messagesList: any[] = [
-                { role: 'system', content: systemPrompt },
-                { role: 'system', content: "IMPORTANT: Answer strictly in Arabic." },
-                { role: 'user', content: query }
-            ];
+        console.log(`[Stream] Starting for ${agentMode} with ${recentHistory.length} history items.`);
 
-            const completion = await groq.chat.completions.create({
-                messages: messagesList,
-                model: 'llama-3.1-70b-versatile',
-                temperature: 0.7,
-                max_tokens: 2048,
+        // ⚠️ DEMO MODE HANDLING
+        if (!process.env.GROQ_API_KEY || process.env.GROQ_API_KEY.startsWith('gsk_your')) {
+            const encoder = new TextEncoder();
+            const mockStream = new ReadableStream({
+                async start(controller) {
+                    const mockText = "⚠️ هذا رد تجريبي (Demo Mode). لم يتم ضبط مفتاح API بعد.\n\nبما أنك ترى هذا النص، فإن تدفق البيانات (Streaming) يعمل بنجاح! 🚀";
+                    const chunks = mockText.split(" ");
+                    for (const chunk of chunks) {
+                        controller.enqueue(encoder.encode(chunk + " "));
+                        await new Promise(r => setTimeout(r, 100)); // Simulate typing
+                    }
+                    controller.close();
+                }
             });
-
-            const aiResponse = completion.choices[0]?.message?.content || 'NO_RESPONSE';
-
-            // ⚡ PERFORMANCE: Cache the result
-            if (aiResponse !== 'NO_RESPONSE') {
-                setCachedResponse(cacheKey, aiResponse);
-            }
-
-            return NextResponse.json({
-                response: aiResponse,
-                model: 'llama-3.1-70b-versatile',
-                mode: agentMode,
-                cached: false,
-                latency: Date.now() - startTime
-            });
-
-        } catch (groqError: any) {
-            // 🛡️ SECURITY: Secure Logging (Mask API Key)
-            const errorMsg = groqError.message || 'Unknown';
-            // Simple masking via Regex if API key was present in error
-            const safeErrorLog = errorMsg.replace(/gsk_[a-zA-Z0-9]{10,}/, '***KEY***');
-
-            console.error('[Groq API Error]', { message: safeErrorLog, code: groqError?.code });
-
-            if (groqError?.error?.code === 'invalid_api_key') {
-                return NextResponse.json({ error: "Service configuration error" }, { status: 500 });
-            }
-
-            return NextResponse.json({
-                error: 'AI Provider Unavailable',
-                // Do NOT expose detailed upstream errors to user
-                requestId: crypto.randomUUID()
-            }, { status: 502 });
+            return new Response(mockStream, { headers: { 'Content-Type': 'text/event-stream' } });
         }
-    } catch (error) {
-        console.error('[Internal API Error]', error);
-        return NextResponse.json(
-            { error: 'Internal server error' },
-            { status: 500 }
-        );
+
+        // 🚀 REAL AI REQUEST (STREAMING)
+        const response = await groq.chat.completions.create({
+            model: 'llama-3.1-70b-versatile',
+            messages: fullConversation as any,
+            temperature: 0.7,
+            max_tokens: 2048,
+            stream: true,
+        });
+
+        // Convert AsyncIterable to ReadableStream
+        const stream = new ReadableStream({
+            async start(controller) {
+                const encoder = new TextEncoder();
+                try {
+                    for await (const chunk of response) {
+                        const content = chunk.choices[0]?.delta?.content || "";
+                        if (content) {
+                            controller.enqueue(encoder.encode(content));
+                        }
+                    }
+                } catch (err) {
+                    console.error("Stream Error:", err);
+                    controller.error(err);
+                } finally {
+                    controller.close();
+                }
+            },
+        });
+
+        return new Response(stream, {
+            headers: {
+                'Content-Type': 'text/event-stream',
+                'Cache-Control': 'no-cache',
+                'Connection': 'keep-alive',
+            },
+        });
+
+    } catch (error: any) {
+        // 🛡️ SECURITY: Secure Logging
+        const errorMsg = error.message || 'Unknown';
+        const safeErrorLog = errorMsg.replace(/gsk_[a-zA-Z0-9]{10,}/, '***KEY***');
+
+        console.error('[API Error]', { message: safeErrorLog });
+
+        // 🚨 MONITORING: Send Alert
+        if (error?.status >= 500 || error?.code === 'rate_limit_exceeded') {
+            await sendAlert('HIGH', 'API Stream Failure', { error: safeErrorLog });
+        }
+
+        return new Response(JSON.stringify({ error: 'Internal Server Error' }), {
+            status: 500,
+            headers: { 'Content-Type': 'application/json' }
+        });
     }
 }

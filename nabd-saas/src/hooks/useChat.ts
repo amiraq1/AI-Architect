@@ -23,23 +23,16 @@ export function useChat() {
     ) => {
         if (!text.trim() && !file) return;
 
+        // 1. Prepare User Message (Optimistic UI)
         let attachmentData: Attachment | null = null;
         let displayContent = text;
 
         if (file) {
             try {
                 const base64Content = await convertFileToBase64(file);
-                attachmentData = {
-                    name: file.name,
-                    type: file.type,
-                    content: base64Content
-                };
+                attachmentData = { name: file.name, type: file.type, content: base64Content };
                 if (!displayContent) displayContent = `[مرفق: ${file.name}]`;
-            } catch (error) {
-                console.error("File conversion error:", error);
-                // We could handle this error state better in a real app
-                return;
-            }
+            } catch (error) { console.error("File error", error); return; }
         }
 
         const userMessage: Message = {
@@ -49,54 +42,62 @@ export function useChat() {
             attachment: attachmentData ? { name: attachmentData.name, type: attachmentData.type } : undefined
         };
 
+        // Update UI immediately with user message
         setMessages((prev) => [...prev, userMessage]);
         setIsLoading(true);
 
         try {
+            // 2. Prepare Payload (History + New Message)
+            const historyPayload = messages.map(m => ({ role: m.role, content: m.content })).filter(m => m.role !== 'error');
+            const newMessagePayload = { role: 'user', content: text }; // Files are just client-side for now in this v1
+
+            const payload = {
+                messages: [...historyPayload, newMessagePayload], // Sending Full History
+                agentMode,
+                modelName
+            };
+
+            // 3. Start Stream Request
             const response = await fetch('/api/nabd', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    query: text,
-                    agentMode,
-                    modelName,
-                    attachment: attachmentData
-                }),
+                body: JSON.stringify(payload),
             });
 
-            const data = await response.json();
+            if (!response.ok) throw new Error(response.statusText);
+            if (!response.body) throw new Error('No body');
 
-            if (!response.ok) {
-                if (response.status === 402) {
-                    throw new Error('PLAN_LIMIT_REACHED');
-                }
-                throw new Error(data.error || 'Failed to get response');
+            // 4. Create Placeholder for AI Response
+            const aiMessageId = crypto.randomUUID();
+            setMessages((prev) => [...prev, { id: aiMessageId, role: 'assistant', content: '' }]);
+
+            // 5. Read Stream
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let aiContent = '';
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                const textChunk = decoder.decode(value, { stream: true });
+                aiContent += textChunk;
+
+                // Update the specific message in state
+                setMessages((prev) =>
+                    prev.map(msg => msg.id === aiMessageId ? { ...msg, content: aiContent } : msg)
+                );
             }
 
-            const assistantMessage: Message = {
-                id: crypto.randomUUID(),
-                role: 'assistant',
-                content: data.result || data.response || JSON.stringify(data),
-                plan: data.plan,
-            };
-
-            setMessages((prev) => [...prev, assistantMessage]);
         } catch (error: any) {
-            const isLimit = error.message === 'PLAN_LIMIT_REACHED';
             setMessages((prev) => [
                 ...prev,
-                {
-                    id: crypto.randomUUID(),
-                    role: 'error',
-                    content: isLimit
-                        ? '🛑 عذراً، نفد رصيدك المجاني!\n\nيرجى الانتقال لصفحة الأسعار للاشتراك والحصول على المزيد من الرسائل.'
-                        : `❌ ${error.message || 'حدث خطأ غير متوقع'}`,
-                },
+                { id: crypto.randomUUID(), role: 'error', content: `❌ ${error.message || 'فشل الاتصال'}` },
             ]);
         } finally {
             setIsLoading(false);
         }
-    }, []);
+    }, [messages]); // Dependency on messages to build history
 
     const clearMessages = () => setMessages([]);
 
