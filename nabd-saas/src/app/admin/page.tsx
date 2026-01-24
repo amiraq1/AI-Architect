@@ -1,8 +1,8 @@
+// nabd-saas/src/app/admin/page.tsx
+export const revalidate = 300; // Cache this page for 5 minutes
+
 import { StatsCard } from '@/components/admin/StatsCard';
 import { RecentTransactions } from '@/components/admin/RecentTransactions';
-
-// ⚡ PERFORMANCE: Cache this page for 5 minutes
-export const revalidate = 300; // SSG/ISR Enabled
 
 export default function AdminDashboard() {
     // Mock Data (In a real app, fetch this from API)
@@ -22,17 +22,13 @@ export default function AdminDashboard() {
 
     return (
         <div className="space-y-8">
-            {/* Stats Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 {stats.map((stat, i) => (
                     <StatsCard key={i} {...stat} />
                 ))}
             </div>
 
-            {/* Charts & Tables Section */}
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-
-                {/* Chart Area (Spans 2 columns) */}
                 <div className="lg:col-span-2 p-1 bg-slate-900/40 backdrop-blur-md rounded-2xl border border-white/5 h-[400px] relative overflow-hidden group flex flex-col">
                     <div className="p-6 relative z-10 flex justify-between items-start">
                         <div>
@@ -45,10 +41,8 @@ export default function AdminDashboard() {
                         </select>
                     </div>
 
-                    {/* Decorative Grid */}
                     <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-[0.03]" />
 
-                    {/* CSS Chart Representation */}
                     <div className="flex-1 flex items-end justify-between px-8 pb-8 gap-2 opacity-60">
                         {[40, 60, 45, 70, 50, 80, 60, 90, 75, 85, 65, 95, 80, 100, 90, 70, 60, 80, 50, 60].map((h, i) => (
                             <div key={i} className="w-full bg-gradient-to-t from-cyan-500/10 to-cyan-400 rounded-t-sm transition-all duration-1000 hover:opacity-100 hover:to-purple-400 origin-bottom" style={{ height: `${h}%` }}></div>
@@ -56,7 +50,6 @@ export default function AdminDashboard() {
                     </div>
                 </div>
 
-                {/* Recent Tables (Spans 1 column) */}
                 <div className="lg:col-span-1 h-[400px]">
                     <RecentTransactions transactions={transactions} />
                 </div>
