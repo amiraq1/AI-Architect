@@ -69,6 +69,11 @@ def python_repl(code: str) -> str:
     Returns:
         The output of the code execution, including any files created.
     """
+    # 🛡️ SECURITY: Blacklist dangerous modules
+    dangerous_keywords = ["os.", "sys.", "subprocess", "shutil", "import os", "import sys", "open(", "__import__", "eval(", "exec("]
+    if any(keyword in code for keyword in dangerous_keywords):
+        return "Security Violation: Access to system modules (os, sys, subprocess) is RESTRICTED."
+
     try:
         old_stdout = sys.stdout
         old_stderr = sys.stderr

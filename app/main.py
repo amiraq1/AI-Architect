@@ -22,7 +22,11 @@ from app.tools.speech_ops import generate_audio
 # ═══════════════════════════════════════════════════════════════════════════════
 # API KEY SECURITY
 # ═══════════════════════════════════════════════════════════════════════════════
-NABD_API_KEY = "nabd-secret-2026-v1"
+NABD_API_KEY = os.getenv("NABD_API_KEY")
+if not NABD_API_KEY:
+    # Fallback only for strict dev environments, but safer to raise
+    print("⚠️ WARNING: NABD_API_KEY not found in .env. Security is compromised if not set.")
+
 api_key_header = APIKeyHeader(name="X-NABD-SECRET", auto_error=False)
 
 
@@ -61,11 +65,13 @@ app = FastAPI(
     lifespan=lifespan
 )
 
+ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "*").split(",")
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "OPTIONS"],
     allow_headers=["*"],
 )
 
@@ -110,7 +116,16 @@ async def health():
 async def upload_image(file: UploadFile = File(...)):
     """Upload an image file for vision analysis."""
     
-    # Validate file type
+    # 1. Validate File Size (Max 5MB)
+    MAX_FILE_SIZE = 5 * 1024 * 1024  # 5 MB
+    file.file.seek(0, 2)
+    file_size = file.file.tell()
+    file.file.seek(0)
+    
+    if file_size > MAX_FILE_SIZE:
+        raise HTTPException(status_code=400, detail="File too large (Max 5MB)")
+
+    # 2. Validate content type strictly
     allowed_types = ["image/jpeg", "image/png", "image/gif", "image/webp"]
     if file.content_type not in allowed_types:
         raise HTTPException(
@@ -118,9 +133,15 @@ async def upload_image(file: UploadFile = File(...)):
             detail=f"Invalid file type. Allowed: {', '.join(allowed_types)}"
         )
     
-    # Generate unique filename
-    ext = os.path.splitext(file.filename)[1] or ".jpg"
-    unique_filename = f"image_{uuid.uuid4().hex[:8]}{ext}"
+    # 3. Generate random filename (ignore user provided name entirely)
+    ext_map = {
+        "image/jpeg": ".jpg",
+        "image/png": ".png",
+        "image/gif": ".gif", 
+        "image/webp": ".webp"
+    }
+    ext = ext_map.get(file.content_type, ".bin")
+    unique_filename = f"img_{uuid.uuid4().hex}{ext}"
     file_path = os.path.join(UPLOAD_DIR, unique_filename)
     
     try:

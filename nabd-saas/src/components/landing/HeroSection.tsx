@@ -22,27 +22,28 @@ export function HeroSection() {
                     <span className="tracking-wide">الجيل الجديد من الذكاء الاصطناعي العربي</span>
                 </div>
 
-                {/* Headline */}
+                {/* Headline - SEO Optimized */}
                 <h1 className="text-5xl md:text-7xl lg:text-8xl font-black tracking-tight mb-8 leading-[1.1] animate-fade-in-up delay-100">
-                    ذكاء اصطناعي عراقي.. <br />
+                    أول ذكاء اصطناعي عراقي <br />
                     <span className="bg-clip-text text-transparent bg-gradient-to-r from-cyan-400 via-blue-500 to-purple-600 drop-shadow-sm">
-                        يفهمك ويفهم لهجتك
+                        يفهم لهجتك وثقافتك
                     </span>
                 </h1>
 
-                {/* Subhead */}
-                <p className="max-w-2xl mx-auto text-lg md:text-xl text-slate-400 mb-10 leading-relaxed animate-fade-in-up delay-200">
-                    منصة متكاملة للمبرمجين، الكتاب، والباحثين. نبض هو مساعدك الشخصي الذي يعمل بلهجتك،
-                    يخطط لمشاريعك، وينفذ المهام المعقدة بسرعة البرق.
-                </p>
+                {/* Subhead - SEO Optimized (Long-tail keywords) */}
+                <h2 className="max-w-3xl mx-auto text-lg md:text-xl text-slate-400 mb-10 leading-relaxed animate-fade-in-up delay-200 font-medium">
+                    نبض هو **المساعد الشخصي العربي** الأكثر تطوراً للمبرمجين، الكتاب، والطلاب.
+                    اكتب باللهجة العراقية أو العربية الفصحى واحصل على إجابات دقيقة، أكواد برمجية، وتحليل بيانات فوري.
+                </h2>
 
                 {/* CTA Buttons */}
-                <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-fade-in-up delay-300">
-                    <Button href="/chat" variant="primary" size="lg" className="w-full sm:w-auto shadow-xl shadow-cyan-500/20">
+                <div className="flex flex-col sm:flex-row items-center justify-center gap-6 animate-fade-in-up delay-300 mt-12">
+                    <Button href="/chat" variant="neon" size="lg" className="w-full sm:w-auto px-10 py-5 text-xl">
                         ابدأ الحديث الآن مجاناً
                     </Button>
-                    <Button href="#demo" variant="secondary" size="lg" className="w-full sm:w-auto">
-                        شاهد كيف يعمل ▶
+                    <Button href="#demo" variant="secondary" size="lg" className="w-full sm:w-auto group">
+                        <span className="group-hover:text-cyan-400 transition-colors">شاهد كيف يعمل</span>
+                        <span className="mr-2 inline-block transition-transform group-hover:-translate-x-1">▶</span>
                     </Button>
                 </div>
             </div>

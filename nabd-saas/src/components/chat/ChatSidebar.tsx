@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { useSession, signOut } from 'next-auth/react';
 import { Message } from '@/types/chat';
 
 interface ChatSidebarProps {
@@ -9,6 +10,8 @@ interface ChatSidebarProps {
 }
 
 export function ChatSidebar({ isOpen, onClose, onNewChat, messagesCount }: ChatSidebarProps) {
+    const { data: session } = useSession();
+
     // Common Classes
     const itemClass = "flex items-center gap-3 px-3 py-2 text-slate-400 hover:text-white hover:bg-white/5 rounded-lg transition-all duration-200 group";
     const iconClass = "text-lg opacity-70 group-hover:opacity-100 transition-opacity";
@@ -26,11 +29,11 @@ export function ChatSidebar({ isOpen, onClose, onNewChat, messagesCount }: ChatS
             <aside className={`
         fixed lg:static inset-y-0 right-0 z-50
         w-[280px] lg:w-72
-        bg-slate-950/95 lg:bg-transparent
-        border-l border-white/5 lg:border-none
+        bg-slate-950/80 backdrop-blur-2xl
+        border-l border-white/5
         transform transition-transform duration-300 ease-in-out
         ${isOpen ? 'translate-x-0' : 'translate-x-full lg:translate-x-0'}
-        flex flex-col
+        flex flex-col shadow-2xl lg:shadow-none
       `}>
                 {/* Logo Area */}
                 <div className="h-16 flex items-center px-6 mb-6">
@@ -82,14 +85,40 @@ export function ChatSidebar({ isOpen, onClose, onNewChat, messagesCount }: ChatS
                         <span className="font-medium">الإعدادات</span>
                     </button>
 
-                    <Link href="/login" className={`${itemClass} hover:bg-red-500/10 hover:text-red-300`}>
-                        <span className={iconClass}>🚪</span>
-                        <span className="font-medium">تسجيل خروج</span>
-                    </Link>
+                    {session ? (
+                        <button
+                            onClick={() => signOut({ callbackUrl: '/login' })}
+                            className={`${itemClass} w-full text-right hover:bg-red-500/10 hover:text-red-300`}
+                        >
+                            <span className={iconClass}>🚪</span>
+                            <span className="font-medium">تسجيل خروج</span>
+                        </button>
+                    ) : (
+                        <Link href="/login" className={`${itemClass} hover:text-cyan-400`}>
+                            <span className={iconClass}>🔐</span>
+                            <span className="font-medium">تسجيل دخول</span>
+                        </Link>
+                    )}
                 </nav>
 
                 {/* User Profile / Status */}
                 <div className="p-4 mt-auto border-t border-white/5">
+                    {session ? (
+                        <div className="bg-slate-900/50 rounded-xl p-3 border border-white/5 mb-3 flex items-center gap-3">
+                            <div className="w-8 h-8 rounded-full bg-slate-700 flex items-center justify-center text-xs font-bold text-white overflow-hidden">
+                                {session.user?.image ? (
+                                    <img src={session.user.image} alt="User" />
+                                ) : (
+                                    <span>{session.user?.name?.[0] || 'U'}</span>
+                                )}
+                            </div>
+                            <div className="overflow-hidden">
+                                <p className="text-xs font-bold text-white truncate">{session.user?.name || 'مستخدم نبض'}</p>
+                                <p className="text-[10px] text-slate-400 truncate">{session.user?.email}</p>
+                            </div>
+                        </div>
+                    ) : null}
+
                     <div className="bg-slate-900/50 rounded-xl p-3 border border-white/5">
                         <div className="flex justify-between items-center text-xs text-slate-400 mb-2">
                             <span>الرصيد المتبقي</span>

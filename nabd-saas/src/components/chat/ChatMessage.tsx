@@ -26,12 +26,12 @@ export function ChatMessage({ message, isLast }: ChatMessageProps) {
             {/* Message Body */}
             <div
                 className={`
-          relative max-w-[85%] sm:max-w-[75%] 
+          relative max-w-[85%] sm:max-w-[75%] shadow-sm
           ${isUser
-                        ? 'bg-slate-800 text-slate-100 rounded-2xl rounded-tr-sm '
+                        ? 'bg-gradient-to-br from-cyan-600/20 to-blue-600/20 backdrop-blur-md border border-cyan-500/20 text-slate-100 rounded-2xl rounded-tr-sm shadow-[0_0_15px_rgba(6,182,212,0.05)]'
                         : isError
-                            ? 'bg-red-900/10 border border-red-500/20 text-red-200 rounded-2xl'
-                            : 'text-slate-300 pl-4' // Assistants get clean text, no bubble
+                            ? 'bg-red-500/10 backdrop-blur-md border border-red-500/20 text-red-200 rounded-2xl'
+                            : 'text-slate-300 pl-4'
                     }
         `}
             >

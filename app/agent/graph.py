@@ -179,19 +179,20 @@ def planner_node(state: AgentState) -> dict:
     messages = state.get("messages", [])
     user_query = messages[-1].content if messages else ""
 
-    planner_prompt = f"""
+    planner_instructions = """
     You are the Planner for Nabd.
-    User Query: "{user_query}"
-    
-    Break this request down into clear, sequential steps.
+    Break the following request down into clear, sequential steps.
     Return ONLY a JSON object with a key "plan" containing a list of strings.
-    Example: {{"plan": ["search for X", "analyze Y", "write report"]}}
+    Example: {"plan": ["search for X", "analyze Y", "write report"]}
     """
     
     system_prompt = get_system_prompt(state.get("agent_mode", "general"))
+    
+    # 🛡️ SECURITY: Separate instructions from user input to prevent Prompt Injection
     response = llm.invoke([
         SystemMessage(content=system_prompt),
-        HumanMessage(content=planner_prompt)
+        SystemMessage(content=planner_instructions),
+        HumanMessage(content=f"Request: {user_query}")
     ])
     
     try:
@@ -230,10 +231,8 @@ def executor_node(state: AgentState) -> dict:
     tools = get_tools()
     llm = get_llm(model_name).bind_tools(tools)
     
-    executor_prompt = f"""
-    Current Objective: {current_task}
-    
-    You MUST use one of the available tools to achieve this objective.
+    executor_instructions = """
+    You MUST use one of the available tools to achieve the objective below.
     - If you need information, call 'web_search'.
     - If you need to write a file, call 'file_writer'.
     - If you need calculations, call 'python_repl'.
@@ -242,10 +241,13 @@ def executor_node(state: AgentState) -> dict:
     """
     
     system_prompt = get_system_prompt(state.get("agent_mode", "general"))
+    
+    # 🛡️ SECURITY: Separate instructions from task content
     try:
         result = llm.invoke([
             SystemMessage(content=system_prompt),
-            HumanMessage(content=executor_prompt)
+            SystemMessage(content=executor_instructions),
+            HumanMessage(content=f"Current Objective: {current_task}")
         ])
         
         return {

@@ -40,17 +40,20 @@ export function FeaturesGrid() {
                     {features.map((feature, index) => (
                         <div
                             key={index}
-                            className={`p-8 rounded-3xl bg-slate-950 border border-slate-800 transition-all duration-300 group hover:-translate-y-1 hover:shadow-2xl hover:shadow-black/50 ${feature.bgHover}`}
+                            className={`relative group p-1 rounded-3xl bg-gradient-to-b from-white/10 to-transparent hover:from-${feature.color.split('-')[1]}-500/50 transition-all duration-500 hover:shadow-[0_0_40px_-10px_rgba(0,0,0,0.3)] animate-fade-in-up`}
+                            style={{ animationDelay: `${index * 150}ms` }}
                         >
-                            <div className={`w-14 h-14 rounded-2xl bg-slate-900 border border-slate-800 flex items-center justify-center mb-6 transition-colors duration-300 ${feature.color} ${feature.iconBg}`}>
-                                {feature.icon}
+                            <div className="bg-slate-950/90 backdrop-blur-xl p-8 rounded-[22px] h-full relative z-10 transition-transform duration-500 group-hover:-translate-y-1 border border-white/5">
+                                <div className={`w-14 h-14 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center mb-6 transition-all duration-500 ${feature.color} group-hover:scale-110 group-hover:bg-${feature.color.split('-')[1]}-500/20`}>
+                                    {feature.icon}
+                                </div>
+                                <h3 className="text-xl font-bold text-white mb-3 group-hover:text-white transition-colors">
+                                    {feature.title}
+                                </h3>
+                                <p className="text-slate-400 leading-relaxed group-hover:text-slate-300 transition-colors">
+                                    {feature.description}
+                                </p>
                             </div>
-                            <h3 className="text-xl font-bold text-white mb-3 group-hover:text-white transition-colors">
-                                {feature.title}
-                            </h3>
-                            <p className="text-slate-400 leading-relaxed group-hover:text-slate-300 transition-colors">
-                                {feature.description}
-                            </p>
                         </div>
                     ))}
                 </div>

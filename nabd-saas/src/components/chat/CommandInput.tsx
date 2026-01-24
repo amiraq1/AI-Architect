@@ -42,14 +42,14 @@ export function CommandInput({ onSubmit, isLoading }: CommandInputProps) {
 
     return (
         <div className="w-full max-w-3xl mx-auto px-4 pb-6">
-            <div className="relative group bg-slate-900/50 backdrop-blur-xl border border-white/10 rounded-3xl shadow-2xl shadow-black/20 focus-within:ring-2 focus-within:ring-cyan-500/20 focus-within:border-cyan-500/30 transition-all duration-300">
+            <div className={`relative group glass-input rounded-3xl transition-all duration-300 ${isLoading ? 'opacity-80' : ''}`}>
 
                 {/* File Preview Badge */}
                 {file && (
-                    <div className="absolute -top-10 right-0 animate-fade-in-up">
-                        <div className="flex items-center gap-2 bg-slate-800 border border-slate-700 text-slate-200 px-3 py-1.5 rounded-full text-xs shadow-lg">
-                            <button onClick={() => setFile(null)} className="hover:text-red-400"><HiX /></button>
-                            <span className="truncate max-w-[150px]">{file.name}</span>
+                    <div className="absolute -top-12 right-0 animate-fade-in-up">
+                        <div className="flex items-center gap-2 bg-slate-800 border border-slate-700 text-slate-200 px-3 py-2 rounded-xl text-xs shadow-lg backdrop-blur-md">
+                            <button onClick={() => setFile(null)} className="hover:text-red-400 p-1 rounded-full hover:bg-white/5 transition-colors"><HiX /></button>
+                            <span className="truncate max-w-[150px] font-mono">{file.name}</span>
                         </div>
                     </div>
                 )}
@@ -66,7 +66,7 @@ export function CommandInput({ onSubmit, isLoading }: CommandInputProps) {
                     <button
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
-                        className="p-3 text-slate-400 hover:text-white hover:bg-white/5 rounded-2xl transition-all"
+                        className="p-3 text-slate-400 hover:text-cyan-300 hover:bg-cyan-500/10 rounded-2xl transition-all duration-300"
                         title="Add Attachment"
                     >
                         <HiPaperClip className="w-5 h-5" />
@@ -80,7 +80,7 @@ export function CommandInput({ onSubmit, isLoading }: CommandInputProps) {
                         placeholder="اسأل نبض أي شيء..."
                         rows={1}
                         disabled={isLoading}
-                        className="flex-1 bg-transparent border-none focus:ring-0 text-slate-100 placeholder-slate-500 resize-none py-3 px-3 max-h-[200px] leading-relaxed scrollbar-thin scrollbar-thumb-slate-700"
+                        className="flex-1 bg-transparent border-none focus:ring-0 text-slate-100 placeholder-slate-500 resize-none py-3 px-3 max-h-[200px] leading-relaxed scrollbar-thin scrollbar-thumb-slate-700 font-medium"
                         dir="rtl"
                     />
 
@@ -88,10 +88,10 @@ export function CommandInput({ onSubmit, isLoading }: CommandInputProps) {
                         type="submit"
                         disabled={(!message.trim() && !file) || isLoading}
                         className={`
-              p-3 rounded-2xl transition-all duration-300
+              p-3 rounded-2xl transition-all duration-300 relative overflow-hidden
               ${(!message.trim() && !file) || isLoading
                                 ? 'bg-slate-800 text-slate-600 cursor-not-allowed'
-                                : 'bg-cyan-500 text-white shadow-lg shadow-cyan-500/25 hover:bg-cyan-400 hover:scale-105 active:scale-95'
+                                : 'bg-gradient-to-tr from-cyan-600 to-blue-600 text-white shadow-lg shadow-cyan-500/25 hover:shadow-cyan-500/40 hover:scale-105 active:scale-95'
                             }
             `}
                     >
@@ -106,7 +106,7 @@ export function CommandInput({ onSubmit, isLoading }: CommandInputProps) {
             </div>
 
             <div className="text-center mt-3">
-                <p className="text-[10px] text-slate-600">
+                <p className="text-[10px] text-slate-600 animate-pulse-slow">
                     نبض يمكن أن يخطئ. يرجى التحقق من المعلومات المهمة.
                 </p>
             </div>

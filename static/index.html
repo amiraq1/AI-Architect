@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,28 +8,63 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800&display=swap"
+        rel="stylesheet">
     <style>
-        * { font-family: 'Cairo', sans-serif; }
-        
+        * {
+            font-family: 'Cairo', sans-serif;
+        }
+
         /* Modern Scrollbar */
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: #0f172a; }
-        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: #475569; }
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
 
         /* Animations */
         @keyframes fade-in-up {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
-        .animate-fade-in-up { animation: fade-in-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
-        
+
+        .animate-fade-in-up {
+            animation: fade-in-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
         @keyframes pulse-glow {
-            0%, 100% { box-shadow: 0 0 15px rgba(6, 182, 212, 0.2); }
-            50% { box-shadow: 0 0 25px rgba(6, 182, 212, 0.5); }
+
+            0%,
+            100% {
+                box-shadow: 0 0 15px rgba(6, 182, 212, 0.2);
+            }
+
+            50% {
+                box-shadow: 0 0 25px rgba(6, 182, 212, 0.5);
+            }
         }
-        .animate-pulse-glow { animation: pulse-glow 3s infinite; }
+
+        .animate-pulse-glow {
+            animation: pulse-glow 3s infinite;
+        }
 
         .glass-panel {
             background: rgba(15, 23, 42, 0.6);
@@ -37,17 +73,54 @@
         }
 
         /* Typography */
-        .prose pre { background: #1e293b; padding: 1rem; border-radius: 0.75rem; direction: ltr; margin: 1rem 0; overflow-x: auto; border: 1px solid #334155; }
-        .prose code { color: #38bdf8; background: rgba(56, 189, 248, 0.1); padding: 0.2rem 0.4rem; border-radius: 4px; font-family: monospace; }
-        .prose p { margin-bottom: 0.75rem; line-height: 1.7; color: #cbd5e1; }
-        .prose ul { list-style-type: disc; padding-right: 1.5rem; margin: 0.5rem 0; color: #cbd5e1; }
-        .prose a { color: #22d3ee; text-decoration: underline; }
-        .prose strong { color: #f1f5f9; font-weight: 700; }
-        
+        .prose pre {
+            background: #1e293b;
+            padding: 1rem;
+            border-radius: 0.75rem;
+            direction: ltr;
+            margin: 1rem 0;
+            overflow-x: auto;
+            border: 1px solid #334155;
+        }
+
+        .prose code {
+            color: #38bdf8;
+            background: rgba(56, 189, 248, 0.1);
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+
+        .prose p {
+            margin-bottom: 0.75rem;
+            line-height: 1.7;
+            color: #cbd5e1;
+        }
+
+        .prose ul {
+            list-style-type: disc;
+            padding-right: 1.5rem;
+            margin: 0.5rem 0;
+            color: #cbd5e1;
+        }
+
+        .prose a {
+            color: #22d3ee;
+            text-decoration: underline;
+        }
+
+        .prose strong {
+            color: #f1f5f9;
+            font-weight: 700;
+        }
+
         .noise-bg::before {
             content: "";
             position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
             pointer-events: none;
             z-index: 50;
             opacity: 0.03;
@@ -55,90 +128,113 @@
         }
     </style>
 </head>
+
 <body class="bg-slate-950 text-slate-50 overflow-hidden noise-bg selection:bg-cyan-500/30" x-data="nabdApp()">
 
     <!-- Ambient Background -->
     <div class="fixed inset-0 pointer-events-none z-0">
-        <div class="absolute top-0 right-1/4 w-[600px] h-[600px] bg-blue-600/10 rounded-full blur-[120px] -translate-y-1/2"></div>
-        <div class="absolute bottom-0 left-1/4 w-[600px] h-[600px] bg-cyan-600/10 rounded-full blur-[120px] translate-y-1/2"></div>
+        <div
+            class="absolute top-0 right-1/4 w-[600px] h-[600px] bg-blue-600/10 rounded-full blur-[120px] -translate-y-1/2">
+        </div>
+        <div
+            class="absolute bottom-0 left-1/4 w-[600px] h-[600px] bg-cyan-600/10 rounded-full blur-[120px] translate-y-1/2">
+        </div>
     </div>
 
     <div class="relative z-10 flex h-screen">
-        
+
         <!-- Sidebar -->
-        <aside class="w-80 bg-slate-900/50 backdrop-blur-xl border-l border-white/5 flex flex-col transition-all duration-300 transform lg:translate-x-0 fixed lg:static inset-y-0 z-40"
-               :class="sidebarOpen ? 'translate-x-0 shadow-2xl' : 'translate-x-full'">
-            
+        <aside
+            class="w-80 bg-slate-900/50 backdrop-blur-xl border-l border-white/5 flex flex-col transition-all duration-300 transform lg:translate-x-0 fixed lg:static inset-y-0 z-40"
+            :class="sidebarOpen ? 'translate-x-0 shadow-2xl' : 'translate-x-full'">
+
             <!-- Header -->
             <div class="p-6 border-b border-white/5 flex items-center justify-between">
                 <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-xl font-bold text-white shadow-lg shadow-cyan-500/20">
+                    <div
+                        class="w-10 h-10 rounded-xl bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-xl font-bold text-white shadow-lg shadow-cyan-500/20">
                         ن
                     </div>
                     <div>
-                        <h1 class="font-bold text-lg tracking-tight">نبض <span class="text-xs font-light text-cyan-400">AI</span></h1>
+                        <h1 class="font-bold text-lg tracking-tight">نبض <span
+                                class="text-xs font-light text-cyan-400">AI</span></h1>
                         <p class="text-[10px] text-slate-400">الإصدار المستقل v2.0</p>
                     </div>
                 </div>
                 <button @click="sidebarOpen = false" class="lg:hidden text-slate-400 hover:text-white">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M6 18L18 6M6 6l12 12" />
+                    </svg>
                 </button>
             </div>
 
             <!-- Agents -->
             <div class="flex-1 overflow-y-auto p-4 space-y-2">
                 <p class="text-xs font-bold text-slate-500 px-2 mb-2 uppercase tracking-wider">اختيار الوكيل</p>
-                
+
                 <template x-for="agent in agents">
-                    <button @click="selectExpert(agent.id)" 
-                            :class="currentMode === agent.id ? 'bg-cyan-500/10 border-cyan-500/30 text-cyan-400' : 'bg-transparent border-transparent text-slate-400 hover:bg-white/5 hover:text-slate-200'"
-                            class="w-full flex items-center gap-3 p-3 rounded-xl border transition-all duration-200 group">
+                    <button @click="selectExpert(agent.id)"
+                        :class="currentMode === agent.id ? 'bg-cyan-500/10 border-cyan-500/30 text-cyan-400' : 'bg-transparent border-transparent text-slate-400 hover:bg-white/5 hover:text-slate-200'"
+                        class="w-full flex items-center gap-3 p-3 rounded-xl border transition-all duration-200 group">
                         <span class="text-2xl group-hover:scale-110 transition-transform" x-text="agent.icon"></span>
                         <div class="text-right">
                             <p class="text-sm font-bold" x-text="agent.name"></p>
                             <p class="text-[10px] opacity-70" x-text="agent.desc"></p>
                         </div>
-                        <div class="mr-auto w-2 h-2 rounded-full" :class="currentMode === agent.id ? 'bg-cyan-400 animate-pulse' : 'bg-slate-700'"></div>
+                        <div class="mr-auto w-2 h-2 rounded-full"
+                            :class="currentMode === agent.id ? 'bg-cyan-400 animate-pulse' : 'bg-slate-700'"></div>
                     </button>
                 </template>
             </div>
 
             <!-- Footer / Model -->
             <div class="p-4 border-t border-white/5 bg-slate-900/30">
-                <button @click="toggleModel()" 
-                        class="w-full flex items-center justify-between p-3 rounded-xl bg-slate-800/50 border border-slate-700 hover:border-slate-500 transition-all">
+                <button @click="toggleModel()"
+                    class="w-full flex items-center justify-between p-3 rounded-xl bg-slate-800/50 border border-slate-700 hover:border-slate-500 transition-all">
                     <div class="flex items-center gap-2">
                         <span class="text-lg" x-text="currentModel.includes('70b') ? '🧠' : '🚀'"></span>
                         <div class="text-right">
-                            <p class="text-xs font-bold text-white" x-text="currentModel.includes('70b') ? 'العبقري (70B)' : 'السريع (8B)'"></p>
+                            <p class="text-xs font-bold text-white"
+                                x-text="currentModel.includes('70b') ? 'العبقري (70B)' : 'السريع (8B)'"></p>
                             <p class="text-[10px] text-slate-400">Llama 3 Model</p>
                         </div>
                     </div>
-                    <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
+                    <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    </svg>
                 </button>
             </div>
         </aside>
 
         <!-- Main Chat Area -->
         <main class="flex-1 flex flex-col relative min-w-0">
-            
+
             <!-- Mobile Header -->
-            <header class="h-16 flex items-center justify-between px-4 border-b border-white/5 bg-slate-900/50 backdrop-blur-md lg:hidden z-30">
+            <header
+                class="h-16 flex items-center justify-between px-4 border-b border-white/5 bg-slate-900/50 backdrop-blur-md lg:hidden z-30">
                 <div class="flex items-center gap-2">
-                    <div class="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-white font-bold text-sm">ن</div>
+                    <div
+                        class="w-8 h-8 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-white font-bold text-sm">
+                        ن</div>
                     <span class="font-bold text-white">نبض</span>
                 </div>
-                <button @click="sidebarOpen = true" class="p-2 text-slate-400 hover:text-white bg-white/5 rounded-lg border border-white/10">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+                <button @click="sidebarOpen = true"
+                    class="p-2 text-slate-400 hover:text-white bg-white/5 rounded-lg border border-white/10">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 6h16M4 12h16M4 18h16" />
+                    </svg>
                 </button>
             </header>
 
             <!-- Messages Stream -->
             <div class="flex-1 overflow-y-auto p-4 lg:p-8 space-y-6 scroll-smooth" x-ref="chatContainer">
-                
+
                 <template x-if="messages.length === 0">
                     <div class="h-full flex flex-col items-center justify-center text-center animate-fade-in-up">
-                        <div class="w-24 h-24 mb-6 rounded-3xl bg-gradient-to-tr from-slate-800 to-slate-900 flex items-center justify-center border border-white/5 shadow-2xl animate-pulse-glow">
+                        <div
+                            class="w-24 h-24 mb-6 rounded-3xl bg-gradient-to-tr from-slate-800 to-slate-900 flex items-center justify-center border border-white/5 shadow-2xl animate-pulse-glow">
                             <span class="text-5xl">👋</span>
                         </div>
                         <h2 class="text-3xl font-bold text-white mb-3">أهلاً بك في المستقبل</h2>
@@ -146,12 +242,18 @@
                             أنا نبض، وكيل ذكاء اصطناعي مستقل. يمكنني التفكير، التخطيط، وتنفيذ المهام المعقدة.
                         </p>
                         <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-lg">
-                            <button @click="sendMessage('لخص لي آخر أخبار الذكاء الاصطناعي')" class="p-4 bg-slate-800/50 border border-slate-700/50 hover:bg-slate-800 hover:border-cyan-500/30 rounded-2xl text-slate-300 text-sm transition-all text-right group">
-                                <span class="block font-bold text-white mb-1 group-hover:text-cyan-400 transition-colors">📰 الأخبار</span>
+                            <button @click="sendMessage('لخص لي آخر أخبار الذكاء الاصطناعي')"
+                                class="p-4 bg-slate-800/50 border border-slate-700/50 hover:bg-slate-800 hover:border-cyan-500/30 rounded-2xl text-slate-300 text-sm transition-all text-right group">
+                                <span
+                                    class="block font-bold text-white mb-1 group-hover:text-cyan-400 transition-colors">📰
+                                    الأخبار</span>
                                 ماذا يحدث في عالم التكنولوجيا؟
                             </button>
-                            <button @click="sendMessage('اكتب كود بايثون لتحليل البيانات')" class="p-4 bg-slate-800/50 border border-slate-700/50 hover:bg-slate-800 hover:border-purple-500/30 rounded-2xl text-slate-300 text-sm transition-all text-right group">
-                                <span class="block font-bold text-white mb-1 group-hover:text-purple-400 transition-colors">💻 برمجة</span>
+                            <button @click="sendMessage('اكتب كود بايثون لتحليل البيانات')"
+                                class="p-4 bg-slate-800/50 border border-slate-700/50 hover:bg-slate-800 hover:border-purple-500/30 rounded-2xl text-slate-300 text-sm transition-all text-right group">
+                                <span
+                                    class="block font-bold text-white mb-1 group-hover:text-purple-400 transition-colors">💻
+                                    برمجة</span>
                                 ساعدني في كتابة أكواد معقدة
                             </button>
                         </div>
@@ -159,27 +261,34 @@
                 </template>
 
                 <template x-for="(msg, index) in messages" :key="index">
-                    <div class="w-full animate-fade-in-up" :class="msg.type === 'user' ? 'flex justify-end' : 'flex justify-start'">
-                        <div class="flex flex-col gap-1 max-w-[85%] lg:max-w-[75%]" :class="msg.type === 'user' ? 'items-end' : 'items-start'">
-                            
+                    <div class="w-full animate-fade-in-up"
+                        :class="msg.type === 'user' ? 'flex justify-end' : 'flex justify-start'">
+                        <div class="flex flex-col gap-1 max-w-[85%] lg:max-w-[75%]"
+                            :class="msg.type === 'user' ? 'items-end' : 'items-start'">
+
                             <div class="relative px-6 py-4 rounded-3xl text-sm leading-relaxed shadow-sm"
-                                 :class="msg.type === 'user' 
+                                :class="msg.type === 'user' 
                                     ? 'bg-blue-600 text-white rounded-tr-none' 
                                     : (msg.type === 'error' ? 'bg-red-500/10 text-red-200 border border-red-500/20' : 'bg-slate-800 text-slate-200 rounded-tl-none')">
-                                
+
                                 <template x-if="msg.type === 'assistant'">
                                     <div class="flex items-center gap-2 mb-3 pb-3 border-b border-white/5">
-                                        <div class="w-6 h-6 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-[10px] font-bold text-white">ن</div>
+                                        <div
+                                            class="w-6 h-6 rounded-lg bg-gradient-to-br from-cyan-500 to-blue-600 flex items-center justify-center text-[10px] font-bold text-white">
+                                            ن</div>
                                         <span class="text-xs font-bold text-cyan-400">نبض</span>
                                         <template x-if="msg.plan && msg.plan.length > 0">
-                                            <span class="text-[10px] bg-slate-900/50 px-2 py-0.5 rounded-full text-slate-400 border border-white/5">تم التخطيط</span>
+                                            <span
+                                                class="text-[10px] bg-slate-900/50 px-2 py-0.5 rounded-full text-slate-400 border border-white/5">تم
+                                                التخطيط</span>
                                         </template>
                                     </div>
                                 </template>
 
                                 <template x-if="msg.hasImage">
                                     <div class="mb-3">
-                                        <img :src="msg.imageUrl" class="rounded-lg max-h-48 object-cover border border-white/10">
+                                        <img :src="msg.imageUrl"
+                                            class="rounded-lg max-h-48 object-cover border border-white/10">
                                     </div>
                                 </template>
 
@@ -188,7 +297,8 @@
                                 <template x-if="msg.plan && msg.plan.length > 0">
                                     <div class="mt-4 pt-3 border-t border-white/10 flex flex-wrap gap-1.5">
                                         <template x-for="step in msg.plan">
-                                            <span class="text-[10px] px-2 py-1 rounded bg-black/20 text-cyan-200/70" x-text="step"></span>
+                                            <span class="text-[10px] px-2 py-1 rounded bg-black/20 text-cyan-200/70"
+                                                x-text="step"></span>
                                         </template>
                                     </div>
                                 </template>
@@ -196,19 +306,24 @@
                             </div>
 
                             <!-- Timestamp / Status -->
-                            <span class="text-[10px] text-slate-500 px-2" x-text="new Date().toLocaleTimeString('ar-IQ', {hour:'2-digit', minute:'2-digit'})"></span>
-                        
+                            <span class="text-[10px] text-slate-500 px-2"
+                                x-text="new Date().toLocaleTimeString('ar-IQ', {hour:'2-digit', minute:'2-digit'})"></span>
+
                         </div>
                     </div>
                 </template>
 
                 <template x-if="isLoading">
                     <div class="flex justify-start animate-fade-in-up">
-                        <div class="flex items-center gap-3 bg-slate-800/50 backdrop-blur border border-white/5 rounded-2xl px-5 py-4">
+                        <div
+                            class="flex items-center gap-3 bg-slate-800/50 backdrop-blur border border-white/5 rounded-2xl px-5 py-4">
                             <div class="flex space-x-1 space-x-reverse">
-                                <div class="w-2 h-2 bg-cyan-500 rounded-full animate-bounce" style="animation-delay: 0s"></div>
-                                <div class="w-2 h-2 bg-cyan-500 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
-                                <div class="w-2 h-2 bg-cyan-500 rounded-full animate-bounce" style="animation-delay: 0.4s"></div>
+                                <div class="w-2 h-2 bg-cyan-500 rounded-full animate-bounce"
+                                    style="animation-delay: 0s"></div>
+                                <div class="w-2 h-2 bg-cyan-500 rounded-full animate-bounce"
+                                    style="animation-delay: 0.2s"></div>
+                                <div class="w-2 h-2 bg-cyan-500 rounded-full animate-bounce"
+                                    style="animation-delay: 0.4s"></div>
                             </div>
                             <span class="text-xs font-bold text-cyan-400 animate-pulse">جاري التفكير...</span>
                         </div>
@@ -220,36 +335,49 @@
             <!-- Input Area -->
             <footer class="p-4 lg:p-6 z-20">
                 <div class="max-w-4xl mx-auto relative group">
-                    <div class="absolute inset-0 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-3xl opacity-0 group-focus-within:opacity-20 transition-opacity blur-xl"></div>
-                    
-                    <div class="bg-slate-900/80 backdrop-blur-xl border border-white/10 rounded-3xl p-2 shadow-2xl relative flex items-end gap-2">
-                        
+                    <div
+                        class="absolute inset-0 bg-gradient-to-r from-cyan-500 to-blue-600 rounded-3xl opacity-0 group-focus-within:opacity-20 transition-opacity blur-xl">
+                    </div>
+
+                    <div
+                        class="bg-slate-900/80 backdrop-blur-xl border border-white/10 rounded-3xl p-2 shadow-2xl relative flex items-end gap-2">
+
                         <!-- File Upload -->
-                        <button @click="$refs.fileInput.click()" class="p-3 text-slate-400 hover:text-white hover:bg-white/10 rounded-2xl transition-all" :class="attachedImage ? 'text-cyan-400 bg-cyan-900/20' : ''">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
+                        <button @click="$refs.fileInput.click()"
+                            class="p-3 text-slate-400 hover:text-white hover:bg-white/10 rounded-2xl transition-all"
+                            :class="attachedImage ? 'text-cyan-400 bg-cyan-900/20' : ''">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                            </svg>
                         </button>
-                        <input type="file" x-ref="fileInput" @change="handleImageSelect($event)" accept="image/*" class="hidden">
+                        <input type="file" x-ref="fileInput" @change="handleImageSelect($event)" accept="image/*"
+                            class="hidden">
 
                         <!-- Image Preview Badge -->
-                        <div x-show="attachedImage" class="absolute -top-12 right-0 bg-slate-800 text-white px-3 py-1 rounded-full text-xs border border-slate-700 flex items-center gap-2 shadow-lg animate-fade-in-up">
-                           <span>📸 صورة مرفقة</span>
-                           <button @click="removeImage()" class="text-red-400 hover:text-red-300">✕</button>
+                        <div x-show="attachedImage"
+                            class="absolute -top-12 right-0 bg-slate-800 text-white px-3 py-1 rounded-full text-xs border border-slate-700 flex items-center gap-2 shadow-lg animate-fade-in-up">
+                            <span>📸 صورة مرفقة</span>
+                            <button @click="removeImage()" class="text-red-400 hover:text-red-300">✕</button>
                         </div>
 
                         <!-- Text Input -->
-                        <textarea x-model="userInput" 
-                                  @keydown.enter.prevent="if(!$event.shiftKey) sendMessage()"
-                                  placeholder="اكتب رسالتك لـ نبض..." 
-                                  class="flex-1 bg-transparent border-none text-white placeholder-slate-500 focus:ring-0 resize-none py-3 max-h-32"
-                                  rows="1"></textarea>
+                        <textarea x-model="userInput" @keydown.enter.prevent="if(!$event.shiftKey) sendMessage()"
+                            placeholder="اكتب رسالتك لـ نبض..."
+                            class="flex-1 bg-transparent border-none text-white placeholder-slate-500 focus:ring-0 resize-none py-3 max-h-32"
+                            rows="1"></textarea>
 
                         <!-- Send Button -->
                         <button @click="sendMessage()" :disabled="isLoading || (!userInput.trim() && !attachedImage)"
-                                class="p-3 bg-cyan-500 hover:bg-cyan-400 text-white rounded-2xl shadow-lg shadow-cyan-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed transform active:scale-95">
-                            <svg class="w-6 h-6 rotate-180 rtl:-rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"/></svg>
+                            class="p-3 bg-cyan-500 hover:bg-cyan-400 text-white rounded-2xl shadow-lg shadow-cyan-500/20 transition-all disabled:opacity-50 disabled:cursor-not-allowed transform active:scale-95">
+                            <svg class="w-6 h-6 rotate-180 rtl:-rotate-90" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                            </svg>
                         </button>
                     </div>
-                    
+
                     <div class="text-center mt-3">
                         <p class="text-[10px] text-slate-500">نبض يمكن أن يخطئ. يرجى التحقق من المعلومات الحساسة.</p>
                     </div>
@@ -259,7 +387,8 @@
         </main>
 
         <!-- Overlay for Mobile Sidebar -->
-        <div x-show="sidebarOpen" @click="sidebarOpen = false" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-30 lg:hidden transition-opacity"></div>
+        <div x-show="sidebarOpen" @click="sidebarOpen = false"
+            class="fixed inset-0 bg-black/60 backdrop-blur-sm z-30 lg:hidden transition-opacity"></div>
     </div>
 
     <script>
@@ -275,7 +404,7 @@
                 imagePreviewUrl: null,
                 uploadedImagePath: null,
                 sessionId: localStorage.getItem('nabd_session_id') || 'user_' + Math.random().toString(36).substr(2, 9),
-                
+
                 agents: [
                     { id: 'general', name: 'مساعد عام', icon: '🤖', desc: 'للمهام اليومية' },
                     { id: 'coder', name: 'المبرمج', icon: '💻', desc: 'كتابة وتحليل الكود' },
@@ -284,7 +413,7 @@
                 ],
 
                 init() {
-                     localStorage.setItem('nabd_session_id', this.sessionId);
+                    localStorage.setItem('nabd_session_id', this.sessionId);
                 },
 
                 selectExpert(mode) {
@@ -299,7 +428,7 @@
                 handleImageSelect(event) {
                     const file = event.target.files[0];
                     if (!file) return;
-                    
+
                     if (!file.type.startsWith('image/')) {
                         alert('الرجاء اختيار صورة فقط');
                         return;
@@ -307,7 +436,7 @@
 
                     this.attachedImage = file;
                     this.imagePreviewUrl = URL.createObjectURL(file);
-                    
+
                     // Upload logic would go here
                     this.uploadImage(file);
                 },
@@ -315,16 +444,19 @@
                 async uploadImage(file) {
                     const formData = new FormData();
                     formData.append('file', file);
-                    
+
                     try {
                         const res = await fetch('/upload', {
                             method: 'POST',
-                            headers: { 'X-NABD-SECRET': 'nabd-secret-2026-v1' },
+                            headers: {
+                                'X-NABD-SECRET': localStorage.getItem('NABD_API_KEY') || 'prompt-user-for-key'
+                            },
                             body: formData
                         });
                         const data = await res.json();
-                        if(res.ok) this.uploadedImagePath = data.image_path;
-                    } catch(e) {
+                        if (res.ok) this.uploadedImagePath = data.image_path;
+                        else alert('Upload failed: ' + (data.detail || 'check API key'));
+                    } catch (e) {
                         console.error("Upload failed", e);
                         alert("فشل رفع الصورة");
                         this.removeImage();
@@ -340,7 +472,7 @@
 
                 async sendMessage(preset = null) {
                     const text = preset || this.userInput.trim();
-                    if((!text && !this.attachedImage) || this.isLoading) return;
+                    if ((!text && !this.attachedImage) || this.isLoading) return;
 
                     this.messages.push({
                         type: 'user',
@@ -353,7 +485,7 @@
                     this.userInput = '';
                     this.removeImage();
                     this.isLoading = true;
-                    
+
                     // Auto scroll
                     this.$nextTick(() => {
                         this.$refs.chatContainer.scrollTop = this.$refs.chatContainer.scrollHeight;
@@ -370,15 +502,15 @@
 
                         const res = await fetch('/run', {
                             method: 'POST',
-                            headers: { 
+                            headers: {
                                 'Content-Type': 'application/json',
-                                'X-NABD-SECRET': 'nabd-secret-2026-v1'
+                                'X-NABD-SECRET': localStorage.getItem('NABD_API_KEY') || 'prompt-user-for-key'
                             },
                             body: JSON.stringify(payload)
                         });
 
                         const data = await res.json();
-                        
+
                         // Parse markdown
                         const htmlContent = marked.parse(data.result || data.detail || 'No response');
 
@@ -387,9 +519,9 @@
                             content: htmlContent,
                             plan: data.plan_executed || []
                         });
-                        
-                    } catch(e) {
-                         this.messages.push({ type: 'error', content: 'حدث خطأ في الاتصال بالسيرفر' });
+
+                    } catch (e) {
+                        this.messages.push({ type: 'error', content: 'حدث خطأ في الاتصال بالسيرفر' });
                     } finally {
                         this.isLoading = false;
                         this.$nextTick(() => {
@@ -401,4 +533,5 @@
         }
     </script>
 </body>
+
 </html>

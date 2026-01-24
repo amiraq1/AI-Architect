@@ -3,8 +3,9 @@ import { Footer } from '@/components/landing/Footer';
 import { PricingCard } from '@/components/pricing/PricingCard';
 
 export const metadata = {
-    title: 'الأسعار | نبض AI',
-    description: 'اختر الباقة المناسبة لاحتياجاتك. ابدأ مجاناً وقم بالترقية عندما تحتاج.',
+    title: 'خطط أسعار نبض AI | اشتراكات الذكاء الاصطناعي في العراق',
+    description: 'أسعار تنافسية تبدأ من المجاني. ادفع بالدينار العراقي (زين كاش، ماستركارد). خطط للأفراد والشركات مع دعم فني عربي.',
+    keywords: ['أسعار نبض', 'اشتراك ChatGPT العراق', 'زين كاش', 'ذكاء اصطناعي مجاني'],
 };
 
 const PLANS = [

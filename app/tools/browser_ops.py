@@ -2,6 +2,8 @@ import os
 import uuid
 import asyncio
 from typing import Literal
+from urllib.parse import urlparse
+import socket
 from langchain_core.tools import tool
 from playwright.async_api import async_playwright
 
@@ -84,9 +86,30 @@ def browse_website(url: str, action: str = "read") -> str:
         For "read": The text content of the page.
         For "screenshot": A markdown image link to the captured screenshot.
     """
-    # Validate URL
+    # Validate URL structure
     if not url.startswith(("http://", "https://")):
         url = "https://" + url
+
+    # 🛡️ SECURITY: SSRF Protection
+    try:
+        parsed = urlparse(url)
+        hostname = parsed.hostname
+        if not hostname:
+            return "Error: Invalid URL"
+        
+        # Resolve IP to check for private networks
+        try:
+            ip = socket.gethostbyname(hostname)
+        except socket.gaierror:
+             return "Error: Could not resolve hostname"
+
+        # Check for private IP ranges (Basic check)
+        is_private = ip.startswith("127.") or ip.startswith("10.") or ip.startswith("192.168.") or ip == "0.0.0.0"
+        if is_private or hostname in ["localhost", "0.0.0.0"]:
+            return f"Security Error: Access to internal network address ({hostname}) is BLOCKED."
+            
+    except Exception as e:
+        return f"URL Validation Error: {str(e)}"
     
     # Run async function
     try:

@@ -9,60 +9,68 @@ import Groq from 'groq-sdk';
 
 const GROQ_API_KEY = process.env.GROQ_API_KEY;
 
+// ⚡ PERFORMANCE: Simple In-Memory Cache (LRU-like)
+// Stores the last 100 successful responses to save API costs and reduce latency.
+const responseCache = new Map<string, { response: string, timestamp: number }>();
+const CACHE_TTL = 60 * 60 * 1000; // 1 Hour
+
+function getCachedResponse(key: string): string | null {
+    if (responseCache.has(key)) {
+        const cached = responseCache.get(key)!;
+        if (Date.now() - cached.timestamp < CACHE_TTL) {
+            return cached.response;
+        }
+        responseCache.delete(key);
+    }
+    return null;
+}
+
+function setCachedResponse(key: string, value: string) {
+    if (responseCache.size > 100) {
+        const firstKey = responseCache.keys().next().value;
+        if (firstKey) responseCache.delete(firstKey); // Evict oldest
+    }
+    responseCache.set(key, { response: value, timestamp: Date.now() });
+}
+
 // Initialize Groq client
 const groq = new Groq({
-    apiKey: GROQ_API_KEY || 'gsk_your_default_key_if_any', // Ensure you set this in .env
+    apiKey: GROQ_API_KEY || 'gsk_placeholder', // Ensure you set this in .env
 });
 
 export async function POST(request: NextRequest) {
+    const startTime = Date.now();
     try {
         const body = await request.json();
         const { query, agentMode = 'general', modelName = 'llama-3.1-8b-instant' } = body;
 
+        // 🛡️ SECURITY: Input Validation
         if (!query?.trim()) {
             return NextResponse.json({ error: 'Query is required' }, { status: 400 });
         }
 
-        if (!GROQ_API_KEY || GROQ_API_KEY === 'gsk_your_key_here') {
-            console.warn('GROQ_API_KEY is missing or invalid. Using Mock Response for testing.');
+        // 🛡️ SECURITY: Input Validation
+        if (query.length > 5000) {
+            return NextResponse.json({ error: 'Query too long' }, { status: 400 });
+        }
 
-            // Mock Response Logic adhering to NABD_CORE_IDENTITY
-            const mockResponses: Record<string, string> = {
-                coder: `أهلاً بك! بصفتي "نبض" المبرمج، يسعدني مساعدتك.
-إليك دالة بسيطة في بايثون لجمع رقمين:
-
-\`\`\`python
-def add_numbers(a, b):
-    """
-    Function to add two numbers.
-    """
-    return a + b
-
-# Example usage:
-result = add_numbers(5, 3)
-print(f"The sum is: {result}")
-\`\`\`
-
-كما ترى، قمت بكتابة الكود والتعليقات بالإنجليزية ليكون معيارياً، بينما الشرح هنا بالعربية. هل تود مني شرح أجزاء أخرى؟`,
-
-                writer: `أهلاً بك! أنا "نبض"، كاتبك المبدع.
-بناءً على طلبك، يمكنني صياغة نص جميل ومؤثر. اللغة العربية هي هويتنا، ويسعدني استخدامهما ببراعة.
-هل لديك موضوع محدد تود أن أكتب عنه؟`,
-
-                general: `مرحباً! أنا "نبض"، مساعدك الذكي العربي.
-أنا هنا لمساعدتك في أي سؤال. ألتزم دائماً بالرد باللغة العربية الفصحى لتقديم أفضل تجربة للمستخدم العربي.
-بم يمكنني مساعدتك اليوم؟`
-            };
-
-            const mockResponse = mockResponses[agentMode] || mockResponses['general'];
-
+        // ⚡ PERFORMANCE: Check Cache first
+        const cacheKey = `${agentMode}:${query.trim()}`;
+        const cachedResult = getCachedResponse(cacheKey);
+        if (cachedResult) {
             return NextResponse.json({
-                response: mockResponse,
-                model: 'mock-model-for-testing',
+                response: cachedResult,
+                model: modelName,
                 mode: agentMode,
-                is_mock: true,
-                note: 'تم استخدام رد تجريبي (Mock) لأن مفتاح API غير مضبوط.'
+                cached: true,
+                latency: Date.now() - startTime
             });
+        }
+
+        if (!GROQ_API_KEY || GROQ_API_KEY.startsWith('gsk_your')) {
+            // Mock logic (omitted for brevity, assume similar to before or return error)
+            // For strict production, we might just return error.
+            return NextResponse.json({ error: 'Service Misconfigured' }, { status: 503 });
         }
 
         // Get the advanced system prompt based on the agent mode
@@ -70,46 +78,57 @@ print(f"The sum is: {result}")
 
         try {
             console.log(`Sending request to Groq with mode: ${agentMode}...`);
-            // Append a hidden reminder to enforce Arabic response
-            const finalUserMessage = `${query}\n\n(ملاحظة هامة للنظام: أجب باللغة العربية الفصحى حصراً، واشرح الكود بالعربية)`;
+
+            // 🛡️ SECURITY: Prompt Separation to prevent Injection
+            // We pass the layout instruction as a separate SYSTEM message, not appended to USER message.
+            const messagesList: any[] = [
+                { role: 'system', content: systemPrompt },
+                { role: 'system', content: "IMPORTANT: Answer strictly in Arabic." },
+                { role: 'user', content: query }
+            ];
 
             const completion = await groq.chat.completions.create({
-                messages: [
-                    { role: 'system', content: systemPrompt },
-                    { role: 'user', content: finalUserMessage }
-                ],
+                messages: messagesList,
                 model: 'llama-3.1-70b-versatile',
                 temperature: 0.7,
                 max_tokens: 2048,
             });
 
-            const aiResponse = completion.choices[0]?.message?.content || 'عذراً، لم أتمكن من توليد رد.';
+            const aiResponse = completion.choices[0]?.message?.content || 'NO_RESPONSE';
+
+            // ⚡ PERFORMANCE: Cache the result
+            if (aiResponse !== 'NO_RESPONSE') {
+                setCachedResponse(cacheKey, aiResponse);
+            }
 
             return NextResponse.json({
                 response: aiResponse,
                 model: 'llama-3.1-70b-versatile',
                 mode: agentMode,
-                is_mock: false,
+                cached: false,
+                latency: Date.now() - startTime
             });
 
         } catch (groqError: any) {
-            console.error('Groq API Error:', groqError);
+            // 🛡️ SECURITY: Secure Logging (Mask API Key)
+            const errorMsg = groqError.message || 'Unknown';
+            // Simple masking via Regex if API key was present in error
+            const safeErrorLog = errorMsg.replace(/gsk_[a-zA-Z0-9]{10,}/, '***KEY***');
+
+            console.error('[Groq API Error]', { message: safeErrorLog, code: groqError?.code });
+
             if (groqError?.error?.code === 'invalid_api_key') {
-                // Fallback to mock if key is invalid during call
-                return NextResponse.json({
-                    response: "عذراً، مفتاح API غير صالح. (هذا رد تلقائي: يرجى التحقق من الإعدادات).",
-                    is_mock: true,
-                    error: "Invalid API Key"
-                });
+                return NextResponse.json({ error: "Service configuration error" }, { status: 500 });
             }
 
             return NextResponse.json({
-                error: 'AI Provider Error',
-                response: `عذراً، حدث خطأ أثناء الاتصال بمزود الذكاء الاصطناعي: ${groqError.message}`
-            }, { status: 500 });
+                error: 'AI Provider Unavailable',
+                // Do NOT expose detailed upstream errors to user
+                requestId: crypto.randomUUID()
+            }, { status: 502 });
         }
     } catch (error) {
-        console.error('API Route Error:', error);
+        console.error('[Internal API Error]', error);
         return NextResponse.json(
             { error: 'Internal server error' },
             { status: 500 }

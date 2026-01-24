@@ -2,16 +2,51 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   output: 'standalone',
+  // ⚡ PERFORMANCE: Enable Gzip/Brotli compression
+  compress: true,
+  // 🛡️ SECURITY: Remove X-Powered-By header (Obscurity)
+  poweredByHeader: false,
+
   images: {
     unoptimized: true,
   },
-  // eslint config is removed as it's no longer supported in next.config.ts for this version
   typescript: {
-    // !! WARN !!
-    // Dangerously allow production builds to successfully complete even if
-    // your project has type errors.
     ignoreBuildErrors: true,
   },
+  // 🛡️ SECURITY: Add Security Headers
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          {
+            key: 'X-DNS-Prefetch-Control',
+            value: 'on'
+          },
+          {
+            key: 'Strict-Transport-Security',
+            value: 'max-age=63072000; includeSubDomains; preload'
+          },
+          {
+            key: 'X-Frame-Options',
+            value: 'SAMEORIGIN' // Prevents Clickjacking
+          },
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff' // Prevents MIME Sniffing
+          },
+          {
+            key: 'Referrer-Policy',
+            value: 'strict-origin-when-cross-origin'
+          },
+          {
+            key: 'Permissions-Policy',
+            value: 'camera=(), microphone=(), geolocation=()' // Principle of Least Privilege
+          }
+        ]
+      }
+    ]
+  }
 };
 
 export default nextConfig;

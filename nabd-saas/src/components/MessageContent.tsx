@@ -73,12 +73,13 @@ export default function MessageContent({ content, className = '' }: MessageConte
     return (
         <div
             className={`
-        prose prose-invert prose-sm sm:prose max-w-none text-right
+        prose prose-invert prose-sm sm:prose max-w-none text-right font-arabic-body
         prose-p:text-slate-200 prose-p:leading-relaxed
-        prose-headings:text-cyan-400 prose-headings:font-bold
+        prose-headings:text-cyan-400 prose-headings:font-bold prose-headings:font-arabic-heading
         prose-strong:text-white
         prose-a:text-cyan-400 prose-a:no-underline hover:prose-a:underline
         prose-blockquote:border-r-cyan-500 prose-blockquote:border-r-4 prose-blockquote:border-l-0 prose-blockquote:bg-slate-800/50 prose-blockquote:py-2 prose-blockquote:px-4 prose-blockquote:rounded-l-lg prose-blockquote:text-slate-300
+        prose-code:font-mono
         prose-hr:border-slate-700
         ${className}
       `}

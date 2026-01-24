@@ -22,15 +22,20 @@ export default function SignupPage() {
             <SocialButtons />
             <Divider />
 
-            <form className="space-y-5" onSubmit={(e) => e.preventDefault()}>
+            <form className="space-y-5" onSubmit={(e) => {
+                e.preventDefault();
+                // ⚠️ DEMO: Simulate signup
+                // In production, call API to create user
+                window.location.href = '/login?signup=success';
+            }}>
                 <div className="grid grid-cols-2 gap-4">
                     <div>
                         <label className="block text-xs font-bold text-slate-300 mb-2 uppercase tracking-wider">الاسم الأول</label>
-                        <input type="text" className="w-full px-4 py-3 bg-slate-950/50 border border-slate-700/50 rounded-xl text-white focus:outline-none focus:border-cyan-500/50 transition-all text-right" placeholder="محمد" />
+                        <input type="text" className="w-full px-4 py-3 bg-slate-950/50 border border-slate-700/50 rounded-xl text-white focus:outline-none focus:border-cyan-500/50 transition-all text-right" placeholder="محمد" required />
                     </div>
                     <div>
                         <label className="block text-xs font-bold text-slate-300 mb-2 uppercase tracking-wider">اسم العائلة</label>
-                        <input type="text" className="w-full px-4 py-3 bg-slate-950/50 border border-slate-700/50 rounded-xl text-white focus:outline-none focus:border-cyan-500/50 transition-all text-right" placeholder="علي" />
+                        <input type="text" className="w-full px-4 py-3 bg-slate-950/50 border border-slate-700/50 rounded-xl text-white focus:outline-none focus:border-cyan-500/50 transition-all text-right" placeholder="علي" required />
                     </div>
                 </div>
 
@@ -41,6 +46,7 @@ export default function SignupPage() {
                         className="w-full px-4 py-3 bg-slate-950/50 border border-slate-700/50 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 transition-all text-right shadow-inner"
                         placeholder="name@example.com"
                         dir="ltr"
+                        required
                     />
                 </div>
 
@@ -51,11 +57,12 @@ export default function SignupPage() {
                         className="w-full px-4 py-3 bg-slate-950/50 border border-slate-700/50 rounded-xl text-white placeholder-slate-600 focus:outline-none focus:border-cyan-500/50 focus:ring-1 focus:ring-cyan-500/50 transition-all text-right shadow-inner"
                         placeholder="••••••••"
                         dir="ltr"
+                        required
                     />
                     <p className="mt-2 text-[10px] text-slate-500">يجب أن تحتوي على 8 أحرف وعلامة واحدة على الأقل.</p>
                 </div>
 
-                <Button href="/chat" variant="primary" className="w-full py-3.5 shadow-xl shadow-purple-900/20 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500">
+                <Button type="submit" variant="primary" className="w-full py-3.5 shadow-xl shadow-purple-900/20 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500">
                     إنشاء حساب مجاني
                 </Button>
             </form>
