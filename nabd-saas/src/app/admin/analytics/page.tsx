@@ -1,7 +1,6 @@
-import { StatsCard } from '@/components/admin/StatsCard';
+export const revalidate = 3600; // Cache analytics for 1 hour
 
-// ⚡ PERFORMANCE: Cache analytics for 1 hour
-export const revalidate = 3600;
+import { StatsCard } from '@/components/admin/StatsCard';
 
 export default function AnalyticsPage() {
     return (
