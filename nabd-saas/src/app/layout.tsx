@@ -7,12 +7,14 @@ const cairo = Cairo({
   weight: ["300", "400", "500", "600", "700", "800"],
   display: "swap",
   variable: "--font-cairo",
+  adjustFontFallback: false, // Fix build error
 });
 
 const jetbrainsMono = JetBrains_Mono({
   subsets: ["latin"],
   variable: "--font-mono",
   display: "swap",
+  adjustFontFallback: false, // Fix build error
 });
 
 export const viewport: Viewport = {
