@@ -67,10 +67,28 @@ export async function POST(request: NextRequest) {
             });
         }
 
+        // ⚠️ DEMO MODE: If no API key is set, return a high-quality mock response.
         if (!GROQ_API_KEY || GROQ_API_KEY.startsWith('gsk_your')) {
-            // Mock logic (omitted for brevity, assume similar to before or return error)
-            // For strict production, we might just return error.
-            return NextResponse.json({ error: 'Service Misconfigured' }, { status: 503 });
+            console.warn('⚠️ Nabd is running in DEMO MODE (No API Key found).');
+
+            // Simulate network delay for realism
+            await new Promise(resolve => setTimeout(resolve, 1500));
+
+            let mockResponse = `هذا رد تجريبي من **نبض** (وضع العرض التجريبي).\n\nبما أن مفتاح API غير مضبوط في ملف \`.env\`، فأنا أقوم بمحاكاة الإجابة.\n\nسألتني: "${query}"\n\nالإجابة النموذجية ستكون هنا مدعومة بالذكاء الاصطناعي الحقيقي عند تفعيله.`;
+
+            if (agentMode === 'coder') {
+                mockResponse = `\`\`\`python\n# مثال على كود بايثون (وضع تجريبي)\ndef nabd_demo():\n    print("أهلاً بك في ذكاء نبض!")\n    return "نجاح"\n\`\`\`\n\nهذا كود تجريبي لأن النظام يعمل بدون مفتاح API حالياً.`;
+            }
+
+            setCachedResponse(cacheKey, mockResponse);
+
+            return NextResponse.json({
+                response: mockResponse,
+                model: 'demo-mock-model',
+                mode: agentMode,
+                cached: false,
+                latency: Date.now() - startTime
+            });
         }
 
         // Get the advanced system prompt based on the agent mode
