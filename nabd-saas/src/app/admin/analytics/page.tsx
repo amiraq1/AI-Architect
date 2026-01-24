@@ -3,7 +3,8 @@
 import { StatsCard } from '@/components/admin/StatsCard';
 
 // ⚡ PERFORMANCE: Cache analytics for 1 hour
-export const revalidate = 3600;
+// ⚡ PERFORMANCE: Cache analytics for 1 hour
+// export const revalidate = 3600; // Removed: Cannot be used in 'use client' components
 
 export default function AnalyticsPage() {
     return (
