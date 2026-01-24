@@ -2,9 +2,11 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useChat } from '@/hooks/useChat';
+import { useSettings } from '@/hooks/useSettings';
 import { ChatSidebar } from '@/components/chat/ChatSidebar';
 import { ChatMessage } from '@/components/chat/ChatMessage';
 import { CommandInput } from '@/components/chat/CommandInput';
+import { SettingsModal } from '@/components/chat/SettingsModal';
 import AgentLoader from '@/components/AgentLoader';
 
 const AGENTS = [
@@ -16,17 +18,35 @@ const AGENTS = [
 
 export default function ChatPage() {
     const { messages, isLoading, sendMessage, clearMessages } = useChat();
+    const { settings, updateSettings, isLoaded } = useSettings();
+
     const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
     const [selectedAgent, setSelectedAgent] = useState('general');
     const [model, setModel] = useState('llama-3.1-8b-instant');
     const messagesEndRef = useRef<HTMLDivElement>(null);
+
+    // Sync model with settings preference when loaded
+    useEffect(() => {
+        if (isLoaded && settings.chat.defaultModel) {
+            setModel(settings.chat.defaultModel);
+        }
+    }, [isLoaded, settings.chat.defaultModel]);
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, [messages, isLoading]);
 
     return (
-        <div className="flex h-[100dvh] bg-slate-950 text-slate-100 font-sans overflow-hidden selection:bg-cyan-500/30" dir="rtl">
+        <div className={`flex h-[100dvh] bg-slate-950 text-slate-100 font-sans overflow-hidden selection:bg-cyan-500/30 ${settings.general.theme === 'light' ? 'bg-white text-slate-900' : ''}`} dir="rtl">
+
+            <SettingsModal
+                isOpen={isSettingsOpen}
+                onClose={() => setIsSettingsOpen(false)}
+                currentSettings={settings}
+                onSave={updateSettings}
+            />
 
             {/* Sidebar */}
             <ChatSidebar
@@ -34,6 +54,7 @@ export default function ChatPage() {
                 onClose={() => setIsSidebarOpen(false)}
                 onNewChat={clearMessages}
                 messagesCount={messages.length}
+                onOpenSettings={() => setIsSettingsOpen(true)}
             />
 
             {/* Main Area */}

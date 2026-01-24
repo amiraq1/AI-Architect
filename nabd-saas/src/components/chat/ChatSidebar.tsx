@@ -7,9 +7,10 @@ interface ChatSidebarProps {
     onClose: () => void;
     onNewChat: () => void;
     messagesCount: number;
+    onOpenSettings?: () => void; // New optional prop
 }
 
-export function ChatSidebar({ isOpen, onClose, onNewChat, messagesCount }: ChatSidebarProps) {
+export function ChatSidebar({ isOpen, onClose, onNewChat, messagesCount, onOpenSettings }: ChatSidebarProps) {
     const { data: session } = useSession();
 
     // Common Classes
@@ -80,7 +81,10 @@ export function ChatSidebar({ isOpen, onClose, onNewChat, messagesCount }: ChatS
                         <span className="font-medium">الأسعار والاشتراكات</span>
                     </Link>
 
-                    <button className={`${itemClass} w-full text-right`}>
+                    <button
+                        onClick={onOpenSettings}
+                        className={`${itemClass} w-full text-right`}
+                    >
                         <span className={iconClass}>⚙️</span>
                         <span className="font-medium">الإعدادات</span>
                     </button>
