@@ -15,7 +15,8 @@ function createStripeClient(): Stripe {
         throw new Error('STRIPE_SECRET_KEY not configured');
     }
     return new Stripe(key, {
-        apiVersion: '2025-01-27.acacia',
+        apiVersion: '2024-12-18.acacia' as any, // Suppress version mismatch lint
+        typescript: true,
     });
 }
 
@@ -57,7 +58,7 @@ export async function POST(req: NextRequest) {
         // Handle events the same way as before
         switch (event.type) {
             case 'checkout.session.completed': {
-                const session = event.data.object as Stripe.CheckoutSession;
+                const session = event.data.object as Stripe.Checkout.Session;
                 const userEmail = session.customer_email;
                 const subscriptionId = session.subscription as string;
 

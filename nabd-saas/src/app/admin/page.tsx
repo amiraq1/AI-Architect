@@ -4,7 +4,8 @@ import { StatsCard } from '@/components/admin/StatsCard';
 import { RecentTransactions } from '@/components/admin/RecentTransactions';
 
 // ⚡ PERFORMANCE: Cache this page for 5 minutes
-export const revalidate = 300;
+// ⚡ PERFORMANCE: Cache this page for 5 minutes
+// export const revalidate = 300; // Removed: invalid in 'use client'
 
 export default function AdminDashboard() {
     // Mock Data (In a real app, fetch this from API)
