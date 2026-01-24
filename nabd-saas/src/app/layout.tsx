@@ -83,6 +83,7 @@ const jsonLd = {
 };
 
 import SessionProvider from "@/components/providers/SessionProvider";
+import { ToastProvider } from "@/components/ui/ToastProvider";
 import { auth } from "@/auth";
 
 export default async function RootLayout({
@@ -96,11 +97,13 @@ export default async function RootLayout({
     <html lang="ar" dir="rtl" className={`${cairo.variable} ${jetbrainsMono.variable}`}>
       <body className={`${cairo.className} antialiased bg-slate-950 text-slate-50 min-h-screen`}>
         <SessionProvider>
-          <script
-            type="application/ld+json"
-            dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-          />
-          {children}
+          <ToastProvider>
+            <script
+              type="application/ld+json"
+              dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+            />
+            {children}
+          </ToastProvider>
         </SessionProvider>
       </body>
     </html>

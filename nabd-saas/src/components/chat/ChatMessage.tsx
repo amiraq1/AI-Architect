@@ -1,5 +1,6 @@
 import { useRef, useEffect } from 'react';
 import MessageContent from '@/components/MessageContent';
+import { ChatEventTimeline } from '@/components/chat/ChatEventTimeline';
 import { Message } from '@/types/chat';
 
 interface ChatMessageProps {
@@ -47,6 +48,13 @@ export function ChatMessage({ message, isLast }: ChatMessageProps) {
                     </div>
                 ) : (
                     <div className="prose prose-invert prose-sm max-w-none">
+                        {/* ⚡ Event Narration Timeline (Manus AI Style) */}
+                        {message.events && message.events.length > 0 && (
+                            <div className="mb-4">
+                                <ChatEventTimeline events={message.events} />
+                            </div>
+                        )}
+
                         {/* If it's an assistant, we use the Markdown renderer directly on the "clean" background */}
                         <MessageContent content={message.content} />
 

@@ -5,6 +5,7 @@ import ReactMarkdown from 'react-markdown';
 import rehypeHighlight from 'rehype-highlight';
 import 'highlight.js/styles/atom-one-dark.css';
 import { HiClipboard, HiCheck } from 'react-icons/hi';
+import { LinkPreviewCard } from '@/components/chat/LinkPreviewCard';
 
 // مكون خاص لعرض بلوك الكود مع زر النسخ
 const CodeBlock = ({ inline, className, children, ...props }: any) => {
@@ -89,14 +90,22 @@ export default function MessageContent({ content, className = '' }: MessageConte
                 rehypePlugins={[rehypeHighlight]}
                 components={{
                     code: CodeBlock,
-                    a: ({ node, ...props }) => (
-                        <a
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="text-cyan-400 hover:text-cyan-300 transition-colors"
-                            {...props}
-                        />
-                    ),
+                    a: ({ node, ...props }) => {
+                        const href = props.href || '';
+                        // Simple heuristic: if the link text is same as href or user says "click here", show card? 
+                        // Let's just show card for external links to keep it simple
+                        if (href.startsWith('http')) {
+                            return <LinkPreviewCard url={href} />;
+                        }
+                        return (
+                            <a
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-cyan-400 hover:text-cyan-300 transition-colors"
+                                {...props}
+                            />
+                        );
+                    },
                     ul: ({ node, ...props }) => (
                         <ul className="list-disc list-inside space-y-1 pr-2" {...props} />
                     ),
