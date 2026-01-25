@@ -1,4 +1,4 @@
-export const revalidate = 3600; // Cache analytics for 1 hour
+// export const revalidate = 3600; // Cache analytics for 1 hour
 
 import { StatsCard } from '@/components/admin/StatsCard';
 

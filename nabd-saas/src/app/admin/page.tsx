@@ -1,7 +1,6 @@
 import ClientAdmin from './ClientAdmin';
 
-// ⚡ PERFORMANCE: Cache this page for 5 minutes
-export const revalidate = 300;
+// ⚡ PERFORMANCE: Cache removed to fix build error
 
 export default function AdminDashboard() {
     return <ClientAdmin />;
