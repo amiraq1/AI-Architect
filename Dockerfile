@@ -39,6 +39,9 @@ FROM base AS deps
 # Copy package files from nabd-saas directory
 COPY nabd-saas/package*.json ./
 
+# Copy Prisma schema for postinstall generation
+COPY nabd-saas/prisma ./prisma
+
 # Install dependencies
 RUN npm ci --only=production
 
