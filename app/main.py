@@ -75,32 +75,39 @@ SYSTEM_PROMPTS = {
 
 ARABIC_ENFORCEMENT = "تنبيه صارم: يجب أن يكون ردك باللغة العربية الفصحى (أو اللهجة العراقية إذا طلب المستخدم)، وحافظ على تنسيق RTL."
 
-# --- منطق المعالجة (Core Logic) ---
+from app.agent import agent_app
+
 async def process_chat(request: ChatRequest) -> str:
-    # 1. اختيار البرومبت المناسب
+    # 1. إعداد البرومبت والنظام (كما كان سابقاً)
     selected_system_prompt = SYSTEM_PROMPTS.get(request.mode, SYSTEM_PROMPTS["general"])
     full_system_message = f"{selected_system_prompt}\n\n{ARABIC_ENFORCEMENT}"
 
-    # 2. بناء سجل الرسائل
+    # 2. تجهيز قائمة الرسائل
     messages = [SystemMessage(content=full_system_message)]
     
-    # إضافة التاريخ السابق (Context)
+    # إضافة التاريخ السابق
     for msg in request.history:
         if msg["role"] == "user":
             messages.append(HumanMessage(content=msg["content"]))
         else:
             messages.append(AIMessage(content=msg["content"]))
             
-    # إضافة الرسالة الحالية
+    # إضافة الرسالة الجديدة
     messages.append(HumanMessage(content=request.message))
 
-    # 3. استدعاء النموذج (Invoking Groq)
-    # ملاحظة: هنا سنقوم لاحقاً بربط LangGraph لتشغيل الأدوات (Tools)
+    # 3. تشغيل الوكيل الذكي (LangGraph) 🚀
+    # هذا السطر هو جوهر النظام: حيث يبدأ الوكيل في التفكير واستخدام الأدوات
     try:
-        response = await llm.ainvoke(messages)
-        return response.content
+        # نستخدم ainvoke لأنه يدعم التشغيل غير المتزامن (Async)
+        result = await agent_app.ainvoke({"messages": messages})
+        
+        # نستخرج آخر رسالة من الوكيل (وهي الرد النهائي للمستخدم)
+        last_message = result["messages"][-1]
+        return last_message.content
+        
     except Exception as e:
-        return f"عذراً، حدث خطأ أثناء المعالجة: {str(e)}"
+        print(f"Error: {str(e)}") # للتشخيص في التيرمينال
+        return "عذراً، واجهت مشكلة تقنية أثناء معالجة طلبك. يرجى المحاولة مرة أخرى."
 
 # --- نقاط النهاية (Endpoints) ---
 

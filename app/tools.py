@@ -9,7 +9,6 @@ from github import Github
 # --- إعداد الأدوات الأساسية ---
 
 # 1. أداة البحث في الإنترنت (DuckDuckGo)
-# لا تحتاج لمفتاح API وتعمل بخصوصية عالية
 search_tool = DuckDuckGoSearchRun()
 
 @tool
@@ -24,7 +23,6 @@ def web_search(query: str) -> str:
         return f"فشل البحث: {str(e)}"
 
 # 2. أداة تنفيذ كود بايثون (Python REPL)
-# تستخدم للعمليات الحسابية المعقدة أو تحليل البيانات
 python_repl = PythonREPL()
 
 @tool
@@ -46,7 +44,6 @@ def get_youtube_transcript(video_url: str) -> str:
     المدخل يجب أن يكون رابط الفيديو كاملاً.
     """
     try:
-        # استخراج ID الفيديو من الرابط
         if "v=" in video_url:
             video_id = video_url.split("v=")[1].split("&")[0]
         elif "youtu.be" in video_url:
@@ -54,12 +51,9 @@ def get_youtube_transcript(video_url: str) -> str:
         else:
             return "رابط غير صالح. يرجى تزويد رابط يوتيوب صحيح."
 
-        # جلب النص (يدعم العربية والإنجليزية)
         transcript = YouTubeTranscriptApi.get_transcript(video_id, languages=['ar', 'en'])
-        
-        # دمج النص في فقرة واحدة
         text_content = " ".join([entry['text'] for entry in transcript])
-        return text_content[:4000]  # نأخذ أول 4000 حرف لتجنب تجاوز حد الرموز
+        return text_content[:4000]
         
     except Exception as e:
         return f"تعذر جلب نص الفيديو (قد لا يحتوي على ترجمة): {str(e)}"
@@ -77,18 +71,15 @@ def analyze_github_repo(repo_url: str) -> str:
         
     try:
         g = Github(github_token)
-        # تنظيف الرابط للحصول على اسم المستودع فقط
         repo_name = repo_url.replace("https://github.com/", "").strip("/")
         repo = g.get_repo(repo_name)
         
-        # جلب هيكل الملفات (أول مستوى فقط للتبسيط)
         contents = repo.get_contents("")
         file_list = []
         
         for content_file in contents:
             file_list.append(f"- {content_file.name} ({content_file.type})")
             
-        # محاولة قراءة ملف README إذا وجد
         try:
             readme = repo.get_readme().decoded_content.decode("utf-8")[:1000]
             summary = f"ملخص README:\n{readme}...\n"
@@ -99,3 +90,6 @@ def analyze_github_repo(repo_url: str) -> str:
         
     except Exception as e:
         return f"حدث خطأ أثناء فحص GitHub: {str(e)}"
+
+# قائمة الأدوات التي سيستخدمها الوكيل
+TOOLS_LIST = [web_search, run_python, get_youtube_transcript, analyze_github_repo]
