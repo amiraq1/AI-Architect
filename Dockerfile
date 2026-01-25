@@ -54,6 +54,7 @@ WORKDIR /app
 
 # Copy package files and install all dependencies (including dev)
 COPY nabd-saas/package*.json ./
+COPY nabd-saas/prisma ./prisma
 RUN npm ci
 
 # Copy source code from nabd-saas directory
