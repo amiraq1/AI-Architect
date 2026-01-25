@@ -1,241 +1,126 @@
 import os
-import uuid
-from typing import Optional
-from contextlib import asynccontextmanager
+import uvicorn
+from typing import List, Optional, Dict, Any
+from fastapi import FastAPI, HTTPException, BackgroundTasks
+from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 from dotenv import load_dotenv
 
+# مكتبات الذكاء الاصطناعي
+from langchain_groq import ChatGroq
+from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
+from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
+
+# تحميل متغيرات البيئة
 load_dotenv()
 
-from fastapi import FastAPI, HTTPException, Request, UploadFile, File, Depends, status
-from fastapi.security import APIKeyHeader
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
-from langchain_core.messages import HumanMessage
-from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
-
-from app.agent.graph import workflow
-from app.agent.state import AgentState
-from app.tools.speech_ops import generate_audio
-
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# API KEY SECURITY
-# ═══════════════════════════════════════════════════════════════════════════════
-NABD_API_KEY = os.getenv("NABD_API_KEY")
-if not NABD_API_KEY:
-    # Fallback only for strict dev environments, but safer to raise
-    print("⚠️ WARNING: NABD_API_KEY not found in .env. Security is compromised if not set.")
-
-api_key_header = APIKeyHeader(name="X-NABD-SECRET", auto_error=False)
-
-
-async def get_api_key(api_key: str = Depends(api_key_header)) -> str:
-    """Validate API key from request header."""
-    if api_key == NABD_API_KEY:
-        return api_key
-    raise HTTPException(
-        status_code=status.HTTP_403_FORBIDDEN,
-        detail="Could not validate credentials"
-    )
-
-
-# Create upload directory
-UPLOAD_DIR = "static/uploads"
-os.makedirs(UPLOAD_DIR, exist_ok=True)
-
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    """Lifespan context manager for persistent SQLite memory."""
-    os.makedirs("data", exist_ok=True)
-    
-    async with AsyncSqliteSaver.from_conn_string("data/memory.db") as checkpointer:
-        app.state.agent = workflow.compile(checkpointer=checkpointer)
-        print("✅ Permanent Memory Loaded! (SQLite)")
-        yield
-    
-    print("🛑 Memory Connection Closed.")
-
-
+# --- إعدادات التطبيق ---
 app = FastAPI(
-    title="Nabd (نبض) - Autonomous AI Agent",
-    description="A high-performance autonomous agent that plans, executes, and delivers results.",
-    version="1.0.0",
-    lifespan=lifespan
+    title="Nabd AI Platform",
+    description="منصة نبض للذكاء الاصطناعي المستقل",
+    version="2.0.0"
 )
 
-ALLOWED_ORIGINS = os.getenv("ALLOWED_ORIGINS", "*").split(",")
-
+# تفعيل CORS للسماح للواجهة الأمامية بالاتصال
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=ALLOWED_ORIGINS,
+    allow_origins=["*"],  # يمكن تقييد هذا في الإنتاج
     allow_credentials=True,
-    allow_methods=["GET", "POST", "OPTIONS"],
+    allow_methods=["*"],
     allow_headers=["*"],
 )
 
+# --- نماذج البيانات (Pydantic Models) ---
+class ChatRequest(BaseModel):
+    message: str
+    mode: str = "general"  # general, coder, writer, researcher
+    history: List[Dict[str, str]] = []  # سجل المحادثة السابق
 
-class RunRequest(BaseModel):
-    prompt: str
-    thread_id: str = "default_user"
-    agent_mode: str = "general"
-    image_path: Optional[str] = None
-    model_name: str = "llama-3.1-8b-instant"
+class ChatResponse(BaseModel):
+    response: str
+    tool_usage: Optional[List[str]] = None
 
+# --- إعداد نموذج اللغة (Groq) ---
+GROQ_API_KEY = os.getenv("GROQ_API_KEY")
+if not GROQ_API_KEY:
+    raise ValueError("⚠️ GROQ_API_KEY is missing in .env file!")
 
-class SpeakRequest(BaseModel):
-    text: str
-    voice: str = "ar-SA-HamidNeural"
+# نستخدم Llama 3 للسرعة والكفاءة
+llm = ChatGroq(
+    temperature=0.5,
+    model_name="llama3-70b-8192", 
+    api_key=GROQ_API_KEY
+)
 
+# --- تعريف البرومبتات (System Prompts) ---
+SYSTEM_PROMPTS = {
+    "general": """أنت (نبض)، مساعد ذكي متطور للمستخدمين العرب. 
+    مهمتك: الإجابة بوضوح، دقة، وودية. استخدم اللغة العربية دائمًا.""",
+    
+    "coder": """أنت مبرمج خبير في منصة نبض.
+    مهمتك: كتابة أكواد نظيفة (Clean Code) واحترافية.
+    القواعد:
+    1. الكود يجب أن يكون قابلاً للتنفيذ.
+    2. اشرح المنطق باختصار بالعربية، واكتب الكود بالإنجليزية.
+    3. اتبع معايير PEP8 في بايثون.""",
+    
+    "writer": """أنت كاتب مبدع ومحترف.
+    مهمتك: صياغة محتوى جذاب، خالي من الأخطاء، ومنسق بعناية.
+    استخدم تنسيق Markdown للعناوين والقوائم.""",
+    
+    "researcher": """أنت باحث أكاديمي دقيق.
+    مهمتك: تقديم معلومات موثقة، تحليل عميق، وذكر المصادر إن أمكن.
+    تجنب الإجابات السطحية."""
+}
 
-class SpeakResponse(BaseModel):
-    audio_url: str
+ARABIC_ENFORCEMENT = "تنبيه صارم: يجب أن يكون ردك باللغة العربية الفصحى (أو اللهجة العراقية إذا طلب المستخدم)، وحافظ على تنسيق RTL."
 
+# --- منطق المعالجة (Core Logic) ---
+async def process_chat(request: ChatRequest) -> str:
+    # 1. اختيار البرومبت المناسب
+    selected_system_prompt = SYSTEM_PROMPTS.get(request.mode, SYSTEM_PROMPTS["general"])
+    full_system_message = f"{selected_system_prompt}\n\n{ARABIC_ENFORCEMENT}"
 
-class UploadResponse(BaseModel):
-    success: bool
-    image_path: str
-    filename: str
+    # 2. بناء سجل الرسائل
+    messages = [SystemMessage(content=full_system_message)]
+    
+    # إضافة التاريخ السابق (Context)
+    for msg in request.history:
+        if msg["role"] == "user":
+            messages.append(HumanMessage(content=msg["content"]))
+        else:
+            messages.append(AIMessage(content=msg["content"]))
+            
+    # إضافة الرسالة الحالية
+    messages.append(HumanMessage(content=request.message))
 
+    # 3. استدعاء النموذج (Invoking Groq)
+    # ملاحظة: هنا سنقوم لاحقاً بربط LangGraph لتشغيل الأدوات (Tools)
+    try:
+        response = await llm.ainvoke(messages)
+        return response.content
+    except Exception as e:
+        return f"عذراً، حدث خطأ أثناء المعالجة: {str(e)}"
 
-class RunResponse(BaseModel):
-    success: bool
-    result: str
-    plan: list[str]
-    steps_executed: int
+# --- نقاط النهاية (Endpoints) ---
 
+@app.get("/")
+async def root():
+    return {"status": "online", "message": "مرحباً بك في منصة نبض 2.0 🚀"}
 
 @app.get("/api/health")
-async def health():
-    """Health check endpoint."""
-    return {"status": "healthy"}
+async def health_check():
+    return {"status": "healthy", "model": "llama3-70b-8192"}
 
+@app.post("/run", response_model=ChatResponse)
+async def run_agent(request: ChatRequest):
+    """
+    نقطة النهاية الرئيسية للمحادثة.
+    تستقبل الرسالة والوضع (Mode) وتعيد الرد الذكي.
+    """
+    ai_reply = await process_chat(request)
+    return ChatResponse(response=ai_reply)
 
-@app.post("/upload", response_model=UploadResponse, dependencies=[Depends(get_api_key)])
-async def upload_image(file: UploadFile = File(...)):
-    """Upload an image file for vision analysis."""
-    
-    # 1. Validate File Size (Max 5MB)
-    MAX_FILE_SIZE = 5 * 1024 * 1024  # 5 MB
-    file.file.seek(0, 2)
-    file_size = file.file.tell()
-    file.file.seek(0)
-    
-    if file_size > MAX_FILE_SIZE:
-        raise HTTPException(status_code=400, detail="File too large (Max 5MB)")
-
-    # 2. Validate content type strictly
-    allowed_types = ["image/jpeg", "image/png", "image/gif", "image/webp"]
-    if file.content_type not in allowed_types:
-        raise HTTPException(
-            status_code=400, 
-            detail=f"Invalid file type. Allowed: {', '.join(allowed_types)}"
-        )
-    
-    # 3. Generate random filename (ignore user provided name entirely)
-    ext_map = {
-        "image/jpeg": ".jpg",
-        "image/png": ".png",
-        "image/gif": ".gif", 
-        "image/webp": ".webp"
-    }
-    ext = ext_map.get(file.content_type, ".bin")
-    unique_filename = f"img_{uuid.uuid4().hex}{ext}"
-    file_path = os.path.join(UPLOAD_DIR, unique_filename)
-    
-    try:
-        # Save file
-        content = await file.read()
-        with open(file_path, "wb") as f:
-            f.write(content)
-        
-        return UploadResponse(
-            success=True,
-            image_path=file_path,
-            filename=unique_filename
-        )
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Upload error: {str(e)}")
-
-
-@app.post("/run", response_model=RunResponse, dependencies=[Depends(get_api_key)])
-async def run_agent(run_request: RunRequest, request: Request):
-    """Execute the autonomous agent with the given prompt."""
-    
-    if not run_request.prompt.strip():
-        raise HTTPException(status_code=400, detail="Prompt cannot be empty")
-    
-    groq_key = os.getenv("GROQ_API_KEY")
-    
-    if not groq_key:
-        raise HTTPException(
-            status_code=500, 
-            detail="GROQ_API_KEY not configured. Please set the API key."
-        )
-    
-    try:
-        # Access the compiled agent from app state
-        agent_graph = request.app.state.agent
-        
-        # Build prompt with image context if provided
-        prompt = run_request.prompt
-        if run_request.image_path:
-            prompt = f"{prompt}\n\n[Image attached: {run_request.image_path}]"
-        
-        initial_state: AgentState = {
-            "messages": [HumanMessage(content=prompt)],
-            "plan": [],
-            "current_step": "",
-            "current_step_index": 0,
-            "tools_output": {},
-            "final_report": "",
-            "review_feedback": "",
-            "is_complete": False,
-            "agent_mode": run_request.agent_mode,
-            "image_path": run_request.image_path,
-            "model_name": run_request.model_name
-        }
-        
-        config = {
-            "configurable": {
-                "thread_id": run_request.thread_id,
-                "model_name": run_request.model_name
-            }
-        }
-        final_state = await agent_graph.ainvoke(initial_state, config=config)
-        
-        return RunResponse(
-            success=True,
-            result=final_state.get("final_report", "No report generated"),
-            plan=final_state.get("plan", []),
-            steps_executed=final_state.get("current_step_index", 0) + 1
-        )
-        
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Agent execution error: {str(e)}")
-
-
-@app.post("/speak", response_model=SpeakResponse, dependencies=[Depends(get_api_key)])
-async def speak_text(request: SpeakRequest):
-    """Convert text to speech using edge-tts."""
-    if not request.text.strip():
-        raise HTTPException(status_code=400, detail="Text cannot be empty")
-    
-    try:
-        audio_url = await generate_audio(request.text, request.voice)
-        return SpeakResponse(audio_url=audio_url)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"TTS error: {str(e)}")
-
-
-os.makedirs("static", exist_ok=True)
-os.makedirs("data", exist_ok=True)
-app.mount("/files", StaticFiles(directory="data"), name="files")
-app.mount("/static", StaticFiles(directory="static"), name="static_files")
-app.mount("/", StaticFiles(directory="static", html=True), name="static")
-
-
+# --- تشغيل الخادم (لأغراض التصحيح المباشر) ---
 if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=5000)
+    uvicorn.run("app.main:app", host="0.0.0.0", port=5000, reload=True)
