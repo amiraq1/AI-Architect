@@ -2,6 +2,14 @@
 
 import { StatsCard } from '@/components/admin/StatsCard';
 
+const PERIODS = ['24 ساعة', '7 أيام', '30 يوم', 'سنة'];
+const TOKEN_USAGE = [35, 45, 30, 60, 75, 50, 65, 80, 70, 90, 85, 100];
+const MODEL_PREFERENCES = [
+    { label: 'Llama 3 (70B)', val: '45%', color: 'bg-cyan-500' },
+    { label: 'Gemma 2 (9B)', val: '30%', color: 'bg-indigo-500' },
+    { label: 'Mistral Large', val: '25%', color: 'bg-emerald-500' },
+];
+
 export default function AnalyticsPage() {
     return (
         <div className="space-y-8">
@@ -11,9 +19,11 @@ export default function AnalyticsPage() {
                     <p className="text-slate-400 text-sm mt-1">مراقبة أداء النظام، استهلاك الذكاء الاصطناعي، ونمو المستخدمين.</p>
                 </div>
                 <div className="flex gap-2 bg-slate-900 p-1 rounded-xl border border-white/10">
-                    {['24ساعة', '7أيام', '30يوم', 'سنة'].map((period, i) => (
+                    {PERIODS.map((period, i) => (
                         <button
-                            key={i}
+                            key={period}
+                            type="button"
+                            aria-pressed={i === 1}
                             className={`px-4 py-1.5 rounded-lg text-xs font-medium transition-all ${i === 1 ? 'bg-slate-700 text-white shadow-sm' : 'text-slate-400 hover:text-slate-200'}`}
                         >
                             {period}
@@ -70,22 +80,22 @@ export default function AnalyticsPage() {
                         </div>
 
                         {/* Bars */}
-                        {[35, 45, 30, 60, 75, 50, 65, 80, 70, 90, 85, 100].map((h, i) => (
-                            <div key={i} className="w-full flex flex-col justify-end group cursor-pointer">
+                        {TOKEN_USAGE.map((h) => (
+                            <div key={h} className="flex-1 flex flex-col justify-end group cursor-pointer relative">
                                 <div
                                     className="w-full bg-gradient-to-t from-purple-500/20 to-purple-500 rounded-t-sm transition-all duration-300 group-hover:opacity-100 opacity-70 group-hover:scale-y-105 origin-bottom"
                                     style={{ height: `${h}%` }}
                                 ></div>
-                                <div className="opacity-0 group-hover:opacity-100 absolute -top-10 bg-slate-800 text-white text-xs px-2 py-1 rounded border border-white/10 transition-opacity">
+                                <div className="opacity-0 group-hover:opacity-100 absolute -top-10 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded border border-white/10 transition-opacity whitespace-nowrap z-10 pointer-events-none">
                                     {h * 1000} T
                                 </div>
                             </div>
                         ))}
                     </div>
                     <div className="flex justify-between mt-4 text-xs text-slate-500">
-                        <span>1 Jan</span>
-                        <span>15 Jan</span>
-                        <span>30 Jan</span>
+                        <span>1 يناير</span>
+                        <span>15 يناير</span>
+                        <span>30 يناير</span>
                     </div>
                 </div>
 
@@ -106,16 +116,12 @@ export default function AnalyticsPage() {
 
                         {/* Legend */}
                         <div className="space-y-4">
-                            {[
-                                { label: 'Llama 3 (70B)', val: '45%', color: 'bg-cyan-500' },
-                                { label: 'Gemma 2 (9B)', val: '30%', color: 'bg-indigo-500' },
-                                { label: 'Mistral Large', val: '25%', color: 'bg-emerald-500' },
-                            ].map((item, i) => (
-                                <div key={i} className="flex items-center gap-3">
+                            {MODEL_PREFERENCES.map((item) => (
+                                <div key={item.label} className="flex items-center gap-3">
                                     <div className={`w-3 h-3 rounded-full ${item.color} shadow-[0_0_10px_currentColor]`}></div>
                                     <div>
                                         <div className="text-sm text-slate-300 font-medium">{item.label}</div>
-                                        <div className="text-xs text-slate-500">{item.val} Usage</div>
+                                        <div className="text-xs text-slate-500">{item.val} استخدام</div>
                                     </div>
                                 </div>
                             ))}
@@ -129,7 +135,7 @@ export default function AnalyticsPage() {
             <div className="bg-slate-900/40 backdrop-blur-md rounded-2xl border border-white/5 p-6 relative overflow-hidden">
                 <div className="flex justify-between items-center mb-6">
                     <h3 className="text-white font-bold">التوزيع الجغرافي للطلبات</h3>
-                    <span className="text-xs bg-emerald-500/10 text-emerald-400 px-2 py-1 rounded border border-emerald-500/20 animate-pulse">Live</span>
+                    <span className="text-xs bg-emerald-500/10 text-emerald-400 px-2 py-1 rounded border border-emerald-500/20 animate-pulse">مباشر</span>
                 </div>
 
                 <div className="h-64 bg-[#0f172a] rounded-xl border border-white/5 relative opacity-80 overflow-hidden">
