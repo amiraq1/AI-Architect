@@ -31,16 +31,8 @@ export default function AnalyticsPage() {
                     ))}
                 </div>
             </div>
-
-            {/* AI Performance Metrics */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <StatsCard
-                    title="استهلاك الرموز (Tokens)"
-                    value="12.5M"
-                    icon="🤖"
-                    color="from-purple-500 to-indigo-500"
-                    trend="up"
-                    trendValue="15%"
+44076
+     trendValue="15%"
                 />
                 <StatsCard
                     title="معدل الاستجابة"
@@ -131,26 +123,26 @@ export default function AnalyticsPage() {
 
             </div>
 
-            {/* Server Health Map Mockup */}
-            <div className="bg-slate-900/40 backdrop-blur-md rounded-2xl border border-white/5 p-6 relative overflow-hidden">
-                <div className="flex justify-between items-center mb-6">
-                    <h3 className="text-white font-bold">التوزيع الجغرافي للطلبات</h3>
-                    <span className="text-xs bg-emerald-500/10 text-emerald-400 px-2 py-1 rounded border border-emerald-500/20 animate-pulse">مباشر</span>
-                </div>
-
-                <div className="h-64 bg-[#0f172a] rounded-xl border border-white/5 relative opacity-80 overflow-hidden">
-                    {/* Abstract Map Dots */}
-                    <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-[radial-gradient(circle_at_center,_#1e293b_0%,_transparent_70%)]"></div>
-
-                    <div className="absolute top-[40%] left-[55%] w-3 h-3 bg-cyan-500 rounded-full shadow-[0_0_15px_#06b6d4] animate-ping"></div>
-                    <div className="absolute top-[40%] left-[55%] w-3 h-3 bg-cyan-500 rounded-full"></div>
-                    <div className="absolute top-[40%] left-[55%] mt-4 ml-[-20px] text-xs text-cyan-300 font-bold bg-slate-900/80 px-2 py-0.5 rounded border border-cyan-500/30">Baghdad (HQ)</div>
-
-                    <div className="absolute top-[35%] left-[50%] w-2 h-2 bg-purple-500 rounded-full shadow-[0_0_10px_#a855f7] opacity-60"></div>
-                    <div className="absolute top-[45%] left-[60%] w-2 h-2 bg-purple-500 rounded-full shadow-[0_0_10px_#a855f7] opacity-60"></div>
-                </div>
-            </div>
-
+            {/* Server Health Map Mockup */ }
+    <div className="bg-slate-900/40 backdrop-blur-md rounded-2xl border border-white/5 p-6 relative overflow-hidden">
+        <div className="flex justify-between items-center mb-6">
+            <h3 className="text-white font-bold">التوزيع الجغرافي للطلبات</h3>
+            <span className="text-xs bg-emerald-500/10 text-emerald-400 px-2 py-1 rounded border border-emerald-500/20 animate-pulse">مباشر</span>
         </div>
+
+        <div className="h-64 bg-[#0f172a] rounded-xl border border-white/5 relative opacity-80 overflow-hidden">
+            {/* Abstract Map Dots */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-[radial-gradient(circle_at_center,_#1e293b_0%,_transparent_70%)]"></div>
+
+            <div className="absolute top-[40%] left-[55%] w-3 h-3 bg-cyan-500 rounded-full shadow-[0_0_15px_#06b6d4] animate-ping"></div>
+            <div className="absolute top-[40%] left-[55%] w-3 h-3 bg-cyan-500 rounded-full"></div>
+            <div className="absolute top-[40%] left-[55%] mt-4 ml-[-20px] text-xs text-cyan-300 font-bold bg-slate-900/80 px-2 py-0.5 rounded border border-cyan-500/30">Baghdad (HQ)</div>
+
+            <div className="absolute top-[35%] left-[50%] w-2 h-2 bg-purple-500 rounded-full shadow-[0_0_10px_#a855f7] opacity-60"></div>
+            <div className="absolute top-[45%] left-[60%] w-2 h-2 bg-purple-500 rounded-full shadow-[0_0_10px_#a855f7] opacity-60"></div>
+        </div>
+    </div>
+
+        </div >
     );
 }

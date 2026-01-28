@@ -18,6 +18,8 @@ from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 load_dotenv()
 
 from app.agent import build_agent_app, agent_app as fallback_agent_app
+from app.rate_limiter import RateLimitMiddleware, get_rate_limiter
+from app.metrics import MetricsMiddleware, get_metrics, metrics_endpoint
 
 def _normalize_backend(raw: Optional[str]) -> str:
     if not raw:
@@ -115,6 +117,12 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# إضافة Rate Limiting Middleware
+app.add_middleware(RateLimitMiddleware, rate_limiter=get_rate_limiter())
+
+# إضافة Prometheus Metrics Middleware
+app.add_middleware(MetricsMiddleware, metrics=get_metrics())
 
 # --- نماذج البيانات (Pydantic Models) ---
 class ChatRequest(BaseModel):
@@ -264,6 +272,11 @@ async def root():
 @app.get("/api/health")
 async def health_check():
     return {"status": "healthy", "model": "llama3-70b-8192"}
+
+@app.get("/metrics")
+async def prometheus_metrics():
+    """Prometheus metrics endpoint for monitoring."""
+    return metrics_endpoint()
 
 @app.post("/run", response_model=ChatResponse)
 async def run_agent(request: ChatRequest):

@@ -4,7 +4,7 @@ from typing import TypedDict, Annotated, Sequence
 from dotenv import load_dotenv
 
 from langchain_groq import ChatGroq
-from langchain_core.messages import BaseMessage
+from langchain_core.messages import BaseMessage, SystemMessage
 from langgraph.graph import StateGraph, END
 from langgraph.prebuilt import ToolNode
 
@@ -12,6 +12,22 @@ from langgraph.prebuilt import ToolNode
 from app.tools import TOOLS_LIST
 
 load_dotenv()
+
+# --- System Prompt لتحسين استدعاء الأدوات مع Llama 3 ---
+TOOL_CALLING_PROMPT = """أنت وكيل ذكي متقدم اسمك "نبض". لديك أدوات متاحة يمكنك استخدامها.
+
+قواعد استخدام الأدوات:
+1. عندما تحتاج معلومات حديثة أو غير موجودة في معرفتك، استخدم أداة web_search.
+2. عندما يُطلب منك كتابة وتنفيذ كود Python، استخدم أداة run_python.
+3. عندما تحتاج تحليل فيديو YouTube، استخدم أداة get_youtube_transcript.
+4. عندما تحتاج فحص مستودع GitHub، استخدم أداة analyze_github_repo.
+
+⚠️ مهم جداً: عند استدعاء أي أداة، تأكد من:
+- إرسال المعاملات (parameters) بصيغة JSON صحيحة
+- استخدام أسماء الأدوات بالضبط كما هي
+- عدم إضافة معاملات غير موجودة في تعريف الأداة
+
+بعد استخدام أداة، اقرأ النتيجة بعناية وقدم إجابة مفيدة للمستخدم بالعربية."""
 
 # --- 1. إعداد النموذج (LLM) ---
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
@@ -30,11 +46,13 @@ llm = ChatGroq(
 # هذا يجعل Llama 3 يعرف أن لديه قدرة على البحث وتشغيل الكود
 llm_with_tools = llm.bind_tools(TOOLS_LIST)
 
+
 # --- 2. تعريف حالة الوكيل (State) ---
 # هذه هي "الذاكرة" التي تنتقل بين خطوات التفكير
 class AgentState(TypedDict):
     # قائمة تخزن تسلسل الرسائل (تضاف لها رسائل جديدة ولا تحذف القديمة)
     messages: Annotated[Sequence[BaseMessage], operator.add]
+
 
 # --- 3. تعريف العقد (Nodes) ---
 
@@ -43,12 +61,19 @@ def agent_node(state: AgentState):
     عقدة التفكير: تستلم المحادثة وتقرر ماذا تفعل (ترد أو تستخدم أداة)
     """
     messages = state["messages"]
+    
+    # إضافة System Prompt إذا لم يكن موجوداً
+    if not messages or not isinstance(messages[0], SystemMessage):
+        messages = [SystemMessage(content=TOOL_CALLING_PROMPT)] + list(messages)
+    
     response = llm_with_tools.invoke(messages)
     return {"messages": [response]}
+
 
 # عقدة تنفيذ الأدوات (جاهزة من LangGraph)
 # تقوم تلقائياً بتشغيل Python أو البحث إذا طلب الوكيل ذلك
 tools_node = ToolNode(TOOLS_LIST)
+
 
 # --- 4. شرط الانتقال (Router Logic) ---
 def should_continue(state: AgentState):
@@ -58,11 +83,12 @@ def should_continue(state: AgentState):
     last_message = state["messages"][-1]
     
     # هل طلب الوكيل استخدام أداة؟ (Tool Call)
-    if last_message.tool_calls:
+    if hasattr(last_message, 'tool_calls') and last_message.tool_calls:
         return "tools"  # اذهب إلى عقدة الأدوات
     
     # إذا لم يطلب، فهذا يعني أنه جهز الرد النهائي
     return END  # أنهِ العملية وأرسل الرد للمستخدم
+
 
 # --- 5. رسم المخطط (Building the Graph) ---
 workflow = StateGraph(AgentState)
@@ -86,6 +112,7 @@ workflow.add_conditional_edges(
 
 # بعد تنفيذ الأداة، عد دائماً للوكيل ليقرأ النتيجة ويصيغ الرد
 workflow.add_edge("tools", "agent")
+
 
 def build_agent_app(checkpointer=None):
     """Compile the workflow with an optional checkpointer."""
