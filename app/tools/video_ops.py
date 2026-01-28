@@ -53,11 +53,5 @@ Transcript:
 {transcript}
 """
         
-    except Exception as e:
-        error_msg = str(e)
-        if "Subtitles are disabled" in error_msg:
-            return f"Cannot analyze this video: Subtitles/captions are disabled by the uploader."
-        elif "No transcript" in error_msg:
-            return f"No transcript available for this video. Try a different video with captions enabled."
-        else:
-            return f"Error analyzing video: {error_msg}"
+    except Exception:
+        return "عذراً، لم أتمكن من قراءة الفيديو، هل الرابط صحيح؟"

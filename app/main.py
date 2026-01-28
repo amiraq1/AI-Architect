@@ -1,24 +1,81 @@
 import os
 import uvicorn
-from typing import List, Optional, Dict, Any
-from fastapi import FastAPI, HTTPException, BackgroundTasks
+from contextlib import asynccontextmanager
+from typing import List, Optional, Dict, AsyncGenerator
+from uuid import uuid4
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from fastapi.responses import StreamingResponse
+from pydantic import BaseModel, Field
 from dotenv import load_dotenv
 
 # مكتبات الذكاء الاصطناعي
 from langchain_groq import ChatGroq
-from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
+from langchain_core.messages import HumanMessage, SystemMessage, AIMessage, BaseMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 
 # تحميل متغيرات البيئة
 load_dotenv()
 
+from app.agent import build_agent_app, agent_app as fallback_agent_app
+
+def _normalize_backend(raw: Optional[str]) -> str:
+    if not raw:
+        return "none"
+    return raw.strip().lower()
+
+
+async def init_checkpointer():
+    backend = _normalize_backend(os.getenv("CHECKPOINT_BACKEND"))
+    if backend in {"none", "off", "disabled"}:
+        return None, None
+
+    try:
+        if backend == "sqlite":
+            from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
+            conn_str = os.getenv("CHECKPOINT_DB_URI", "checkpoints.sqlite")
+            cm = AsyncSqliteSaver.from_conn_string(conn_str)
+            saver = await cm.__aenter__()
+            return saver, cm
+
+        if backend == "postgres":
+            try:
+                from langgraph.checkpoint.postgres.aio import AsyncPostgresSaver
+            except Exception as exc:
+                raise RuntimeError("langgraph-checkpoint-postgres is not installed.") from exc
+
+            conn_str = os.getenv("CHECKPOINT_DB_URI")
+            if not conn_str:
+                raise RuntimeError("CHECKPOINT_DB_URI is required for postgres backend.")
+
+            cm = AsyncPostgresSaver.from_conn_string(conn_str)
+            saver = await cm.__aenter__()
+            await saver.setup()
+            return saver, cm
+
+        raise RuntimeError(f"Unsupported CHECKPOINT_BACKEND '{backend}'.")
+    except Exception as exc:
+        print(f"Checkpointing disabled: {exc}")
+        return None, None
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    checkpointer, cm = await init_checkpointer()
+    app.state.agent_app = build_agent_app(checkpointer=checkpointer)
+    app.state.checkpointer_cm = cm
+    try:
+        yield
+    finally:
+        if cm:
+            await cm.__aexit__(None, None, None)
+
 # --- إعدادات التطبيق ---
 app = FastAPI(
     title="Nabd AI Platform",
     description="منصة نبض للذكاء الاصطناعي المستقل",
-    version="2.0.0"
+    version="2.0.0",
+    lifespan=lifespan,
 )
 
 def _parse_origins(raw: str) -> List[str]:
@@ -63,11 +120,14 @@ app.add_middleware(
 class ChatRequest(BaseModel):
     message: str
     mode: str = "general"  # general, coder, writer, researcher
-    history: List[Dict[str, str]] = []  # سجل المحادثة السابق
+    history: List[Dict[str, str]] = Field(default_factory=list)  # سجل المحادثة السابق
+    stream: bool = False
+    session_id: Optional[str] = None
 
 class ChatResponse(BaseModel):
     response: str
     tool_usage: Optional[List[str]] = None
+    session_id: Optional[str] = None
 
 # --- إعداد نموذج اللغة (Groq) ---
 GROQ_API_KEY = os.getenv("GROQ_API_KEY")
@@ -104,39 +164,96 @@ SYSTEM_PROMPTS = {
 
 ARABIC_ENFORCEMENT = "تنبيه صارم: يجب أن يكون ردك باللغة العربية الفصحى (أو اللهجة العراقية إذا طلب المستخدم)، وحافظ على تنسيق RTL."
 
-from app.agent import agent_app
 
-async def process_chat(request: ChatRequest) -> str:
-    # 1. إعداد البرومبت والنظام (كما كان سابقاً)
+def _resolve_session_id(request: ChatRequest) -> str:
+    return request.session_id or str(uuid4())
+
+
+def _get_agent_app():
+    return getattr(app.state, "agent_app", fallback_agent_app)
+
+
+def _invoke_config(session_id: str) -> Dict[str, Dict[str, str]]:
+    return {"configurable": {"thread_id": session_id}}
+
+def build_messages(request: ChatRequest) -> List[BaseMessage]:
     selected_system_prompt = SYSTEM_PROMPTS.get(request.mode, SYSTEM_PROMPTS["general"])
     full_system_message = f"{selected_system_prompt}\n\n{ARABIC_ENFORCEMENT}"
 
-    # 2. تجهيز قائمة الرسائل
-    messages = [SystemMessage(content=full_system_message)]
-    
-    # إضافة التاريخ السابق
+    messages: List[BaseMessage] = [SystemMessage(content=full_system_message)]
+
     for msg in request.history:
         if msg["role"] == "user":
             messages.append(HumanMessage(content=msg["content"]))
         else:
             messages.append(AIMessage(content=msg["content"]))
-            
-    # إضافة الرسالة الجديدة
-    messages.append(HumanMessage(content=request.message))
 
-    # 3. تشغيل الوكيل الذكي (LangGraph) 🚀
-    # هذا السطر هو جوهر النظام: حيث يبدأ الوكيل في التفكير واستخدام الأدوات
+    messages.append(HumanMessage(content=request.message))
+    return messages
+
+
+def _format_sse(data: str, event: Optional[str] = None) -> str:
+    lines = data.splitlines() or [""]
+    payload = []
+    if event:
+        payload.append(f"event: {event}")
+    payload.extend([f"data: {line}" for line in lines])
+    return "\n".join(payload) + "\n\n"
+
+
+def _chunk_text(text: str, chunk_size: int = 8) -> List[str]:
+    words = text.split()
+    if not words:
+        return [""]
+    chunks = []
+    for idx in range(0, len(words), chunk_size):
+        chunks.append(" ".join(words[idx:idx + chunk_size]) + " ")
+    return chunks
+
+
+async def process_chat(request: ChatRequest, session_id: str) -> str:
+    messages = build_messages(request)
+    agent_app = _get_agent_app()
+
     try:
-        # نستخدم ainvoke لأنه يدعم التشغيل غير المتزامن (Async)
-        result = await agent_app.ainvoke({"messages": messages})
-        
-        # نستخرج آخر رسالة من الوكيل (وهي الرد النهائي للمستخدم)
+        result = await agent_app.ainvoke({"messages": messages}, config=_invoke_config(session_id))
         last_message = result["messages"][-1]
         return last_message.content
-        
     except Exception as e:
         print(f"Error: {str(e)}") # للتشخيص في التيرمينال
         return "عذراً، واجهت مشكلة تقنية أثناء معالجة طلبك. يرجى المحاولة مرة أخرى."
+
+
+async def stream_chat(request: ChatRequest, session_id: str) -> AsyncGenerator[str, None]:
+    messages = build_messages(request)
+    agent_app = _get_agent_app()
+
+    yield _format_sse(session_id, event="session")
+
+    if not hasattr(agent_app, "astream_events"):
+        full_text = await process_chat(request, session_id)
+        for chunk in _chunk_text(full_text):
+            yield _format_sse(chunk)
+        yield _format_sse("[DONE]")
+        return
+
+    try:
+        async for event in agent_app.astream_events(
+            {"messages": messages},
+            config=_invoke_config(session_id),
+            version="v1",
+        ):
+            if event.get("event") != "on_chat_model_stream":
+                continue
+
+            chunk = event.get("data", {}).get("chunk")
+            text = getattr(chunk, "content", None)
+            if text:
+                yield _format_sse(text)
+
+        yield _format_sse("[DONE]")
+    except Exception as e:
+        yield _format_sse(f"عذراً، حدث خطأ أثناء البث: {str(e)}", event="error")
 
 # --- نقاط النهاية (Endpoints) ---
 
@@ -154,8 +271,35 @@ async def run_agent(request: ChatRequest):
     نقطة النهاية الرئيسية للمحادثة.
     تستقبل الرسالة والوضع (Mode) وتعيد الرد الذكي.
     """
-    ai_reply = await process_chat(request)
-    return ChatResponse(response=ai_reply)
+    if request.stream:
+        session_id = _resolve_session_id(request)
+        return StreamingResponse(
+            stream_chat(request, session_id),
+            media_type="text/event-stream",
+            headers={
+                "Cache-Control": "no-cache",
+                "X-Accel-Buffering": "no"
+            }
+        )
+    session_id = _resolve_session_id(request)
+    ai_reply = await process_chat(request, session_id)
+    return ChatResponse(response=ai_reply, session_id=session_id)
+
+
+@app.post("/run/stream")
+async def run_agent_stream(request: ChatRequest):
+    """
+    نقطة نهاية للبث المباشر (Streaming) على شكل SSE.
+    """
+    session_id = _resolve_session_id(request)
+    return StreamingResponse(
+        stream_chat(request, session_id),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "X-Accel-Buffering": "no"
+        }
+    )
 
 # --- تشغيل الخادم (لأغراض التصحيح المباشر) ---
 if __name__ == "__main__":

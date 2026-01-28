@@ -51,8 +51,8 @@ def get_youtube_transcript(video_url: str) -> str:
         text_content = " ".join([entry['text'] for entry in transcript])
         return text_content[:4000]
         
-    except Exception as e:
-        return f"تعذر جلب نص الفيديو (قد لا يحتوي على ترجمة): {str(e)}"
+    except Exception:
+        return "عذراً، لم أتمكن من قراءة الفيديو، هل الرابط صحيح؟"
 
 # 4. أداة تحليل مستودعات GitHub
 @tool

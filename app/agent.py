@@ -22,7 +22,8 @@ if not GROQ_API_KEY:
 llm = ChatGroq(
     temperature=0.5,
     model_name="llama3-70b-8192",
-    api_key=GROQ_API_KEY
+    api_key=GROQ_API_KEY,
+    streaming=True
 )
 
 # 💡 الخطوة السحرية: ربط الأدوات بالنموذج
@@ -86,6 +87,10 @@ workflow.add_conditional_edges(
 # بعد تنفيذ الأداة، عد دائماً للوكيل ليقرأ النتيجة ويصيغ الرد
 workflow.add_edge("tools", "agent")
 
+def build_agent_app(checkpointer=None):
+    """Compile the workflow with an optional checkpointer."""
+    return workflow.compile(checkpointer=checkpointer)
+
+
 # تجميع التطبيق النهائي (Compile)
-# ملاحظة: سنستخدم checkpointer لاحقاً لحفظ الحالة (Memory)
-agent_app = workflow.compile()
+agent_app = build_agent_app()
