@@ -21,10 +21,39 @@ app = FastAPI(
     version="2.0.0"
 )
 
+def _parse_origins(raw: str) -> List[str]:
+    return [origin.strip() for origin in raw.split(",") if origin.strip()]
+
+
+def get_allowed_origins() -> List[str]:
+    raw = os.getenv("CORS_ALLOW_ORIGINS")
+    if raw:
+        return _parse_origins(raw)
+
+    origins: List[str] = []
+    wasp_web_url = os.getenv("WASP_WEB_CLIENT_URL")
+    if wasp_web_url:
+        origins.append(wasp_web_url.strip())
+
+    env = (os.getenv("ENV") or "development").lower()
+    if env != "production":
+        origins.extend(_parse_origins(os.getenv("CORS_DEV_ORIGINS", "http://localhost:3000")))
+
+    # Remove duplicates while preserving order
+    seen = set()
+    deduped: List[str] = []
+    for origin in origins:
+        if origin not in seen:
+            seen.add(origin)
+            deduped.append(origin)
+    return deduped
+
+
 # تفعيل CORS للسماح للواجهة الأمامية بالاتصال
+allowed_origins = get_allowed_origins()
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # يمكن تقييد هذا في الإنتاج
+    allow_origins=allowed_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

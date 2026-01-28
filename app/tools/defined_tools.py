@@ -1,10 +1,8 @@
 import os
-import sys
-import re
-from io import StringIO
 from typing import List
 from langchain_core.tools import tool
 from langchain_community.tools import DuckDuckGoSearchRun
+from app.sandbox import run_python_sandboxed
 
 
 DATA_DIR = "./data"
@@ -58,69 +56,12 @@ def file_writer(content: str, filename: str) -> str:
 
 @tool
 def python_repl(code: str) -> str:
-    """Execute Python code for calculations, data processing, and file generation.
-    
-    IMPORTANT: All files must be saved to './data/' directory.
-    Example: plt.savefig('./data/chart.png')
-    
-    Args:
-        code: The Python code to execute.
-        
-    Returns:
-        The output of the code execution, including any files created.
-    """
-    # 🛡️ SECURITY: Blacklist dangerous modules
-    dangerous_keywords = ["os.", "sys.", "subprocess", "shutil", "import os", "import sys", "open(", "__import__", "eval(", "exec("]
-    if any(keyword in code for keyword in dangerous_keywords):
-        return "Security Violation: Access to system modules (os, sys, subprocess) is RESTRICTED."
+    """Execute Python code inside a sandboxed container.
 
-    try:
-        old_stdout = sys.stdout
-        old_stderr = sys.stderr
-        sys.stdout = StringIO()
-        sys.stderr = StringIO()
-        
-        global_vars = {
-            "__builtins__": __builtins__,
-            "DATA_DIR": DATA_DIR,
-        }
-        local_vars = {}
-        
-        exec(code, global_vars, local_vars)
-        
-        stdout_output = sys.stdout.getvalue()
-        stderr_output = sys.stderr.getvalue()
-        sys.stdout = old_stdout
-        sys.stderr = old_stderr
-        
-        results = []
-        
-        if stdout_output.strip():
-            results.append(stdout_output.strip())
-        
-        file_patterns = re.findall(r'[\'"]\.?/?data/([^"\']+)[\'"]', code)
-        for filename in file_patterns:
-            filepath = os.path.join(DATA_DIR, filename)
-            if os.path.exists(filepath):
-                results.append(f"File saved to data/{filename}")
-        
-        if stderr_output.strip():
-            results.append(f"Warnings: {stderr_output.strip()}")
-        
-        if results:
-            return "\n".join(results)
-        
-        if local_vars:
-            last_var = list(local_vars.values())[-1]
-            if last_var is not None:
-                return str(last_var)
-        
-        return "Code executed successfully (no output)"
-        
-    except Exception as e:
-        sys.stdout = old_stdout
-        sys.stderr = old_stderr
-        return f"Execution error: {str(e)}"
+    IMPORTANT: To persist files, write only to './data/' directory.
+    Example: plt.savefig('./data/chart.png')
+    """
+    return run_python_sandboxed(code)
 
 
 from app.tools.video_ops import get_youtube_transcript

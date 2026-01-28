@@ -1,10 +1,9 @@
 import os
-from typing import Optional
 from langchain_core.tools import tool
 from langchain_community.tools import DuckDuckGoSearchRun
-from langchain_experimental.utilities import PythonREPL
 from youtube_transcript_api import YouTubeTranscriptApi
 from github import Github
+from app.sandbox import run_python_sandboxed
 
 # --- إعداد الأدوات الأساسية ---
 
@@ -22,17 +21,14 @@ def web_search(query: str) -> str:
     except Exception as e:
         return f"فشل البحث: {str(e)}"
 
-# 2. أداة تنفيذ كود بايثون (Python REPL)
-python_repl = PythonREPL()
-
 @tool
 def run_python(code: str) -> str:
     """
-    تستخدم لتنفيذ كود Python فقط (للحسابات أو معالجة النصوص).
-    المدخل يجب أن يكون كود بايثون صالح.
+    تستخدم لتنفيذ كود Python داخل بيئة معزولة (Sandbox).
+    لا يسمح بالوصول للنظام أو الشبكة.
     """
     try:
-        return python_repl.run(code)
+        return run_python_sandboxed(code)
     except Exception as e:
         return f"خطأ في التنفيذ: {str(e)}"
 
